@@ -21,7 +21,7 @@ test.describe("Smoke tests", () => {
   test("login page renders correctly", async ({ page }) => {
     await page.goto("/login");
 
-    await expect(page.locator("h1")).toHaveText("archmax");
+    await expect(page.locator("h1")).toHaveText("archmax semantics");
     await expect(page.locator("#username")).toBeVisible();
     await expect(page.locator("#password")).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();

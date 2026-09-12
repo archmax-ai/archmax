@@ -26,9 +26,12 @@ export const auth = betterAuth({
     enabled: true,
     window: 10,
     max: 100,
+    // Keys are matched against the path relative to Better Auth's base path
+    // ("/sign-in/username"), not the full request URL. With the "/api/auth/..." prefix
+    // these rules never matched and Better Auth's built-in 3-per-10s sign-in rule applied.
     customRules: {
-      "/api/auth/sign-in/email": { window: 60, max: 10 },
-      "/api/auth/sign-in/username": { window: 60, max: 10 },
+      "/sign-in/email": { window: 60, max: 10 },
+      "/sign-in/username": { window: 60, max: 10 },
     },
   },
 
@@ -42,6 +45,7 @@ export const auth = betterAuth({
   },
 
   advanced: {
+    // Retained across the product rename: changing the prefix would invalidate every existing session.
     cookiePrefix: "archmax",
     defaultCookieAttributes: {
       httpOnly: true,

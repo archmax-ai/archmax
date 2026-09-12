@@ -1,15 +1,7 @@
-import { test, expect, type Page, type BrowserContext } from "@playwright/test";
-import * as path from "node:path";
-import * as fs from "node:fs";
-import { fileURLToPath } from "node:url";
+import { test, expect, type Page } from "@playwright/test";
+import { USER_STATE as AUTH_FILE, readProjectState } from "./auth-state";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-const USERNAME = process.env.E2E_USERNAME ?? "admin";
-const PASSWORD = process.env.E2E_PASSWORD ?? "testpass123";
-
-const PROJECT_NAME = "E2E Federation";
 
 const CONNECTIONS = [
   {
@@ -38,42 +30,6 @@ const CONNECTIONS = [
     config: { endpoint: "http://lakekeeper:8181/catalog", warehouse: "e2e_warehouse", token: "e2e-iceberg-token" },
   },
 ] as const;
-
-const AUTH_FILE = path.join(__dirname, ".auth-state.json");
-
-async function loginAndSaveState(page: Page, context: BrowserContext) {
-  await page.goto("/login");
-  await page.locator("#username").fill(USERNAME);
-  await page.locator("#password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).not.toHaveURL(/\/login/, { timeout: 10_000 });
-
-  const disclaimer = page.getByRole("dialog");
-  if (await disclaimer.isVisible({ timeout: 3_000 }).catch(() => false)) {
-    await disclaimer.locator("input[type='checkbox']").check();
-    await disclaimer.getByRole("button", { name: "Continue" }).click();
-  }
-
-  await context.storageState({ path: AUTH_FILE });
-}
-
-async function ensureProject(page: Page): Promise<string> {
-  await page.goto("/");
-  await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(500);
-
-  const url = page.url();
-  const projectMatch = url.match(/\/([a-f0-9]{24})(?:\/|$)/);
-  if (projectMatch) return projectMatch[1];
-
-  await page.getByRole("button", { name: "Select a project" }).click();
-  await page.getByRole("menuitem", { name: "New Project" }).click();
-  await page.getByLabel("Title").fill(PROJECT_NAME);
-  await page.getByRole("button", { name: "Create" }).click();
-  await page.waitForURL(/\/[a-f0-9]{24}(?:\/|$)/, { timeout: 10_000 });
-  const newUrl = page.url();
-  return newUrl.match(/\/([a-f0-9]{24})(?:\/|$)/)![1];
-}
 
 async function createConnection(
   page: Page,
@@ -144,15 +100,9 @@ async function testConnection(page: Page, projectId: string, connName: string) {
 test.describe.serial("Data Federation", () => {
   let projectId: string;
 
-  test("login and ensure project exists", async ({ browser }) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
-    await loginAndSaveState(page, context);
-    projectId = await ensureProject(page);
+  test("load shared project", async () => {
+    projectId = readProjectState().id;
     expect(projectId).toBeTruthy();
-
-    await context.close();
   });
 
   for (const conn of CONNECTIONS) {
@@ -177,7 +127,4 @@ test.describe.serial("Data Federation", () => {
     });
   }
 
-  test.afterAll(() => {
-    if (fs.existsSync(AUTH_FILE)) fs.unlinkSync(AUTH_FILE);
-  });
 });
