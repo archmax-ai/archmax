@@ -447,7 +447,7 @@ function CreateTokenDialog({
   const canSubmit = name.trim().length > 0 && selectedScopes.size > 0 && !mutation.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); onOpenChange(v); }}>
+    <Dialog open={open} onOpenChange={(v: boolean) => { if (!v) resetForm(); onOpenChange(v); }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create MCP Token</DialogTitle>

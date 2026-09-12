@@ -525,7 +525,7 @@ function PublishHistoryCard() {
 
       <Dialog
         open={!!revertTarget}
-        onOpenChange={(v) => { if (!revertMutation.isPending && !v) setRevertTarget(null); }}
+        onOpenChange={(v: boolean) => { if (!revertMutation.isPending && !v) setRevertTarget(null); }}
       >
         <DialogContent showCloseButton={!revertMutation.isPending}>
           <DialogHeader>
@@ -627,7 +627,7 @@ function DeleteProjectCard() {
         </div>
       </Card>
 
-      <Dialog open={open} onOpenChange={(v) => { if (!deleteMutation.isPending) setOpen(v); }}>
+      <Dialog open={open} onOpenChange={(v: boolean) => { if (!deleteMutation.isPending) setOpen(v); }}>
         <DialogContent showCloseButton={!deleteMutation.isPending}>
           <DialogHeader>
             <DialogTitle>Delete project</DialogTitle>

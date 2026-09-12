@@ -272,7 +272,7 @@ function ConnectionsPage() {
 
       <Dialog
         open={!!deleteTarget}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        onOpenChange={(open: boolean) => !open && setDeleteTarget(null)}
       >
         <DialogContent>
           <DialogHeader>
@@ -592,7 +592,7 @@ function ConnectionFormDialog({
           ) : (
             <Tabs
               value={connMode}
-              onValueChange={(v) => setConnMode(v as "fields" | "uri")}
+              onValueChange={(v: string) => setConnMode(v as "fields" | "uri")}
             >
               <TabsList variant="pill" className="w-full">
                 <TabsTrigger value="fields" className="flex-1">
