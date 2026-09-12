@@ -164,7 +164,7 @@ The container entrypoint (`/entrypoint.sh`) follows this startup sequence:
    └── Export MONGODB_URI=mongodb://127.0.0.1:27017/archmax
 3. If REDIS_URL is not set:
    ├── Create /tmp/redis (if missing)
-   ├── Start redis-server (daemonize, bind 127.0.0.1)
+   ├── Start redis-server (daemonize, bind 127.0.0.1, persistence disabled, log at /var/log/redis.log)
    └── Export REDIS_URL=redis://127.0.0.1:6379
 4. Start BullMQ worker (background)
 5. Start API server on port 3000 (background)
@@ -370,6 +370,19 @@ Map to a different host port:
 ```bash
 docker run -d -p 9090:8080 ... ghcr.io/archmax-ai/semantics:latest
 ```
+
+### Redis warns about memory overcommit
+
+`/var/log/redis.log` inside the container may contain `WARNING Memory overcommit must be enabled!`. It refers to a **host kernel** setting (`vm.overcommit_memory`) that Redis wants for background snapshot saves. The embedded Redis runs with persistence disabled (`--save "" --appendonly no`) because queue data is ephemeral by design, so nothing forks for a background save and the warning has no effect on this image.
+
+The setting is not namespaced, so it cannot be changed from inside the container (`docker run --sysctl` rejects it). If you want to silence it at the source on a Linux host:
+
+```bash
+sudo sysctl vm.overcommit_memory=1          # until reboot
+echo 'vm.overcommit_memory = 1' | sudo tee /etc/sysctl.d/99-redis.conf   # persistent
+```
+
+Docker Desktop (macOS/Windows) runs a managed Linux VM where this is not user-configurable; the warning is safe to ignore there.
 
 ### Volume permission errors
 

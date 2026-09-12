@@ -65,7 +65,11 @@ fi
 if [ -z "$REDIS_URL" ]; then
   mkdir -p /tmp/redis
   echo "[entrypoint] Starting embedded Redis..."
-  redis-server --daemonize yes --dir /tmp/redis --bind 127.0.0.1 --loglevel warning
+  # Queue data is ephemeral by design, so RDB snapshots and AOF are off: no background
+  # save forks, which is also what Redis's "memory overcommit" startup warning is about.
+  # Like mongod, Redis logs to a file so its startup notices stay out of `docker logs`.
+  redis-server --daemonize yes --dir /tmp/redis --bind 127.0.0.1 --loglevel warning \
+    --save "" --appendonly no --logfile /var/log/redis.log
   export REDIS_URL="redis://127.0.0.1:6379"
   echo "[entrypoint] Embedded Redis ready"
 fi
