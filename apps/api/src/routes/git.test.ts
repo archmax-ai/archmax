@@ -112,7 +112,7 @@ describe("GET /git/log", () => {
   });
 
   it("returns paginated log entries", async () => {
-    const entry = { oid: "abc123", message: "test commit", author: { name: "archmax", email: "archmax@localhost" }, timestamp: "2025-01-01T00:00:00Z" };
+    const entry = { oid: "abc123", message: "test commit", author: { name: "archmax semantics", email: "semantics@localhost" }, timestamp: "2025-01-01T00:00:00Z" };
     mockLog.mockResolvedValue({ entries: [entry], total: 1, page: 1, limit: 10 });
     const res = await app.request("/api/projects/test-project/git/log", {
       method: "GET",

@@ -112,7 +112,7 @@ async function loggedTool(
   }
 }
 
-export async function registerArchmaxTools(server: McpServer, ctx: McpToolContext): Promise<void> {
+export async function registerSemanticsTools(server: McpServer, ctx: McpToolContext): Promise<void> {
   const { projectId, scopes, fileSvc } = ctx;
 
   server.registerTool("list_semantic_models", {

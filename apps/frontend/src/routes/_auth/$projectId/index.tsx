@@ -19,7 +19,6 @@ import {
   ChevronRight,
   MessageSquareWarning,
   LayoutGrid,
-  Activity,
   AlertCircle,
   Star,
   BookOpen,
@@ -81,7 +80,7 @@ function DashboardPage() {
         <div className="flex items-center gap-2 shrink-0">
           <Button size="sm" variant="outline" asChild>
             <a
-              href="https://docs.archmax.ai"
+              href="https://semantics.archmax.ai"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -90,7 +89,7 @@ function DashboardPage() {
             </a>
           </Button>
           <a
-            href="https://github.com/archmaxai/archmax"
+            href="https://github.com/archmax-ai/semantics"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"

@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 
+// Retained across the product rename so users who already acknowledged the disclaimer are not shown it again.
 const STORAGE_KEY = "archmax:disclaimer-accepted";
 
 export function useDisclaimerAccepted() {

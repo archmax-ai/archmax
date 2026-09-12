@@ -1,13 +1,13 @@
 ---
 title: Docker Reference
-description: In-depth reference for running archmax as a Docker container, covering image contents, environment variables, volumes, entrypoint behavior, and troubleshooting.
+description: In-depth reference for running archmax semantics as a Docker container, covering image contents, environment variables, volumes, entrypoint behavior, and troubleshooting.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
 
 ## Image Contents
 
-The `ghcr.io/archmaxai/archmax` Docker image bundles the application components needed to run archmax:
+The `ghcr.io/archmax-ai/semantics` Docker image bundles the application components needed to run archmax:
 
 | Component | Description |
 |-----------|-------------|
@@ -52,13 +52,13 @@ Internal services (API on 3000, MongoDB on 27017, Redis on 6379) bind to `127.0.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `APP_BASE_URL` | - | Public URL of this instance (e.g. `https://archmax.example.com`). **Set this when running behind a reverse proxy or on a cloud host.** Automatically configures CORS and auth origins. |
+| `APP_BASE_URL` | - | Public URL of this instance (e.g. `https://semantics.example.com`). **Set this when running behind a reverse proxy or on a cloud host.** Automatically configures CORS and auth origins. |
 | `PORT` | `3000` | Internal API server port. Normally not changed; nginx proxies port 8080 to this. |
 | `CORS_ORIGINS` | _(derived)_ | Comma-separated allowed origins. Defaults to `APP_BASE_URL` when set. Override only if you need additional origins. |
 | `AUTH_BASE_URL` | _(derived)_ | Auth callback URL. Defaults to `APP_BASE_URL` when set, otherwise `http://localhost:PORT`. |
 
 <Aside type="caution">
-If you access archmax through a reverse proxy, load balancer, or custom domain, you **must** set `APP_BASE_URL` to the public URL (e.g. `https://archmax.example.com`). Without it, authentication will fail with an "invalid origin" error because the server defaults to localhost origins.
+If you access archmax semantics through a reverse proxy, load balancer, or custom domain, you **must** set `APP_BASE_URL` to the public URL (e.g. `https://semantics.example.com`). Without it, authentication will fail with an "invalid origin" error because the server defaults to localhost origins.
 </Aside>
 
 ### Admin Credentials
@@ -72,7 +72,8 @@ If you access archmax through a reverse proxy, load balancer, or custom domain, 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ARCHMAX_DATA_DIR` | `/data` | Root data directory for all persistent application data. Normally not changed in Docker. |
+| `SEMANTICS_DATA_DIR` | `/data` | Root data directory for all persistent application data. Normally not changed in Docker. |
+| `ARCHMAX_DATA_DIR` | - | **Deprecated.** Pre-rename alias for `SEMANTICS_DATA_DIR`. Still honoured (with a startup warning) so existing deployments keep working; `SEMANTICS_DATA_DIR` wins when both are set. |
 
 ### Data Federation (DuckDB)
 
@@ -80,10 +81,11 @@ If you access archmax through a reverse proxy, load balancer, or custom domain, 
 |----------|---------|-------------|
 | `QUERY_TIMEOUT_MS` | `30000` | Per-query DuckDB timeout in milliseconds. Applies to MCP, agent, data browser, and connection-test queries. On timeout the query is cancelled via `interrupt()`. |
 | `MAX_CONCURRENT_QUERIES` | `10` | Max concurrent DuckDB queries per project. Additional requests wait up to `QUERY_TIMEOUT_MS` for a slot. |
-| `DUCKDB_ENABLE_CUSTOM_FIREBIRD` | `false` | Enable the custom (unsigned) `firebird` connection type. When enabled, the type appears in the connection form and every DuckDB instance starts with `allow_unsigned_extensions` so the Firebird extension can load. This is the only switch that enables unsigned-extension support; the federation console never installs unsigned extensions from arbitrary custom sources. The extension is installed from the public archmax-hosted repository (`https://archmaxai.github.io/duckdb_firebird`). |
 
-<Aside type="caution">
-The Firebird extension is unsigned and executes arbitrary native code inside the application process. Only set `DUCKDB_ENABLE_CUSTOM_FIREBIRD=true` when you trust the Firebird extension source. It is disabled by default.
+DuckDB extensions are loaded only from the core and community registries. Unsigned extensions are never permitted, and there is no setting that enables them.
+
+<Aside type="note">
+**Upgrading from a build with Firebird support:** the `firebird` connection type and the `DUCKDB_ENABLE_CUSTOM_FIREBIRD` variable have been removed. Delete the variable from your environment or compose file — it is no longer recognised. If you ever stored a Firebird connection, remove it directly in MongoDB with `db.connections.deleteMany({ type: "firebird" })`; it cannot be deleted from the connections page, because `firebird` is no longer a valid connection type.
 </Aside>
 
 ### AI Agent
@@ -154,10 +156,10 @@ This bind mount maps the container’s data directory to `~/.archmax` on the hos
 The container entrypoint (`/entrypoint.sh`) follows this startup sequence:
 
 ```
-1. Set ARCHMAX_DATA_DIR (default: /data)
+1. Set SEMANTICS_DATA_DIR (default: /data)
 2. If MONGODB_URI is not set:
-   ├── Create $ARCHMAX_DATA_DIR/mongodb (if missing)
-   ├── Start mongod (fork, bind 127.0.0.1, data at $ARCHMAX_DATA_DIR/mongodb)
+   ├── Create $SEMANTICS_DATA_DIR/mongodb (if missing)
+   ├── Start mongod (fork, bind 127.0.0.1, data at $SEMANTICS_DATA_DIR/mongodb)
    ├── Wait for readiness (ping loop, max ~10s)
    └── Export MONGODB_URI=mongodb://127.0.0.1:27017/archmax
 3. If REDIS_URL is not set:
@@ -225,34 +227,34 @@ The embedded MongoDB adds ~200 MB RAM overhead. When using external MongoDB via 
 ### Docker Compose (Recommended)
 
 ```bash
-git clone https://github.com/archmaxai/archmax.git
-cd archmax
+git clone https://github.com/archmax-ai/semantics.git
+cd semantics
 cp .env.example .env
 # Edit .env with your values
 docker compose up -d
 ```
 
-See the [`docker-compose.yml`](https://github.com/archmaxai/archmax/blob/main/docker-compose.yml) in the repository root for the full configuration.
+See the [`docker-compose.yml`](https://github.com/archmax-ai/semantics/blob/main/docker-compose.yml) in the repository root for the full configuration.
 
 ### Standalone (Embedded MongoDB + Redis)
 
 ```bash
 docker run -d \
-  --name archmax \
+  --name semantics \
   -p 8080:8080 \
   -e BETTER_AUTH_SECRET=$(openssl rand -base64 32) \
   -e UI_USERNAME=admin \
   -e UI_PASSWORD=changeme \
   -e AGENT_API_KEY=your-api-key \
   -v ~/.archmax:/data \
-  ghcr.io/archmaxai/archmax:latest
+  ghcr.io/archmax-ai/semantics:latest
 ```
 
 ### Standalone with External MongoDB
 
 ```bash
 docker run -d \
-  --name archmax \
+  --name semantics \
   -p 8080:8080 \
   -e MONGODB_URI=mongodb://mongo.example.com:27017/archmax \
   -e BETTER_AUTH_SECRET=$(openssl rand -base64 32) \
@@ -260,31 +262,31 @@ docker run -d \
   -e UI_PASSWORD=changeme \
   -e AGENT_API_KEY=your-api-key \
   -v ~/.archmax:/data \
-  ghcr.io/archmaxai/archmax:latest
+  ghcr.io/archmax-ai/semantics:latest
 ```
 
 ### Behind a Reverse Proxy
 
-When archmax is accessible through a custom domain or reverse proxy, set `APP_BASE_URL` to the public URL:
+When archmax semantics is accessible through a custom domain or reverse proxy, set `APP_BASE_URL` to the public URL:
 
 ```bash
 docker run -d \
-  --name archmax \
+  --name semantics \
   -p 8080:8080 \
-  -e APP_BASE_URL=https://archmax.example.com \
+  -e APP_BASE_URL=https://semantics.example.com \
   -e BETTER_AUTH_SECRET=$(openssl rand -base64 32) \
   -e UI_USERNAME=admin \
   -e UI_PASSWORD=changeme \
   -e AGENT_API_KEY=your-api-key \
   -v ~/.archmax:/data \
-  ghcr.io/archmaxai/archmax:latest
+  ghcr.io/archmax-ai/semantics:latest
 ```
 
 ### With Custom AI Provider
 
 ```bash
 docker run -d \
-  --name archmax \
+  --name semantics \
   -p 8080:8080 \
   -e BETTER_AUTH_SECRET=$(openssl rand -base64 32) \
   -e UI_USERNAME=admin \
@@ -293,8 +295,34 @@ docker run -d \
   -e AGENT_API_BASE_URL=https://api.openai.com/v1 \
   -e AGENT_MODEL=gpt-4o \
   -v ~/.archmax:/data \
-  ghcr.io/archmaxai/archmax:latest
+  ghcr.io/archmax-ai/semantics:latest
 ```
+
+## Upgrading from archmax
+
+Releases before the rename shipped as `ghcr.io/archmaxai/archmax`. Upgrading to `ghcr.io/archmax-ai/semantics` is a tag change: nothing that stores state was renamed, so no data migration is needed.
+
+| Identifier | Status |
+|------------|--------|
+| Image | `ghcr.io/archmaxai/archmax` → `ghcr.io/archmax-ai/semantics`. Update your `docker run` command or `docker-compose.yml`. |
+| `ARCHMAX_DATA_DIR` | Deprecated alias for `SEMANTICS_DATA_DIR`. Still works; the container logs a warning until you rename it. |
+| MongoDB database name | Unchanged (`archmax`). Existing projects, connections and MCP tokens are picked up as-is. |
+| Compose service `archmax` and volume `archmax-data` | Unchanged. `docker compose pull && docker compose up -d` recreates the container in place and reattaches the existing volume. |
+| Container user `archmax` | Unchanged. File ownership on `/data` needs no repair. |
+| Auth cookies | Unchanged prefix. Existing sessions stay signed in. |
+
+For a standalone container that is still named `archmax`, stop and remove it by its old name before starting the new image:
+
+```bash
+docker pull ghcr.io/archmax-ai/semantics:latest
+docker stop archmax && docker rm archmax
+docker run -d --name semantics -p 8080:8080 \
+  -v ~/.archmax:/data \
+  ... \
+  ghcr.io/archmax-ai/semantics:latest
+```
+
+Keep the same `-v` mount, `BETTER_AUTH_SECRET` and `ENCRYPTION_KEY`; everything under `/data` is read unchanged.
 
 ## Troubleshooting
 
@@ -303,7 +331,7 @@ docker run -d \
 Check the logs for the startup error:
 
 ```bash
-docker logs archmax
+docker logs semantics
 ```
 
 Common causes:
@@ -316,13 +344,13 @@ Common causes:
 If using embedded MongoDB, check the `mongod` log:
 
 ```bash
-docker exec -it archmax cat /var/log/mongod.log
+docker exec -it semantics cat /var/log/mongod.log
 ```
 
 If using an external MongoDB, verify the connection string from inside the container:
 
 ```bash
-docker exec -it archmax node -e "
+docker exec -it semantics node -e "
   const { MongoClient } = require('mongodb');
   MongoClient.connect(process.env.MONGODB_URI).then(() => console.log('OK')).catch(e => console.error(e.message));
 "
@@ -332,7 +360,7 @@ Common causes:
 - Network/firewall blocking the connection
 - DNS resolution failure (use IP address or ensure Docker DNS resolves the hostname)
 - Missing `?authSource=admin` for authenticated MongoDB instances
-- When using Docker Compose, ensure the `mongo` service is healthy before archmax starts (`depends_on`)
+- When using Docker Compose, ensure the `mongo` service is healthy before archmax semantics starts (`depends_on`)
 - Embedded MongoDB fails on corrupted data; delete the `/data/mongodb` directory and restart
 
 ### Port 8080 already in use
@@ -340,7 +368,7 @@ Common causes:
 Map to a different host port:
 
 ```bash
-docker run -d -p 9090:8080 ... ghcr.io/archmaxai/archmax:latest
+docker run -d -p 9090:8080 ... ghcr.io/archmax-ai/semantics:latest
 ```
 
 ### Volume permission errors

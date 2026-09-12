@@ -5,7 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/app.ts",
-    "./mcp/archmax-server": "./src/mcp/archmax-server.ts"
+    "./mcp/semantics-server": "./src/mcp/semantics-server.ts"
   },
   "scripts": {
     "dev": "node --watch --import tsx src/index.ts",

@@ -1,19 +1,31 @@
 #!/bin/sh
 set -e
 
-export ARCHMAX_DATA_DIR="${ARCHMAX_DATA_DIR:-/data}"
-export HOME="$ARCHMAX_DATA_DIR"
-mkdir -p "$ARCHMAX_DATA_DIR/projects"
+# ARCHMAX_DATA_DIR is the pre-rename name; keep honouring it so existing deployments start unchanged.
+# The image bakes SEMANTICS_DATA_DIR=/data as a default, so a legacy variable passed by the operator
+# must still win over that default (an image default is not operator configuration). An explicitly
+# passed SEMANTICS_DATA_DIR that differs from the default is left alone.
+IMAGE_DEFAULT_DATA_DIR=/data
+if [ -n "$ARCHMAX_DATA_DIR" ]; then
+  # This script re-execs itself via gosu; print once, on the pass that runs the services.
+  [ "$(id -u)" != "0" ] && echo "[entrypoint] WARNING: ARCHMAX_DATA_DIR is deprecated. Rename it to SEMANTICS_DATA_DIR."
+  if [ -z "$SEMANTICS_DATA_DIR" ] || [ "$SEMANTICS_DATA_DIR" = "$IMAGE_DEFAULT_DATA_DIR" ]; then
+    export SEMANTICS_DATA_DIR="$ARCHMAX_DATA_DIR"
+  fi
+fi
+export SEMANTICS_DATA_DIR="${SEMANTICS_DATA_DIR:-$IMAGE_DEFAULT_DATA_DIR}"
+export HOME="$SEMANTICS_DATA_DIR"
+mkdir -p "$SEMANTICS_DATA_DIR/projects"
 
 # When running as root (default), fix ownership on volume mounts and re-exec as archmax.
 if [ "$(id -u)" = "0" ]; then
-  mkdir -p "$ARCHMAX_DATA_DIR/projects" "$ARCHMAX_DATA_DIR/mongodb" "$ARCHMAX_DATA_DIR/.duckdb" /tmp/redis
-  chown archmax:archmax "$ARCHMAX_DATA_DIR" "$ARCHMAX_DATA_DIR/projects" "$ARCHMAX_DATA_DIR/mongodb" /tmp/redis /var/log
+  mkdir -p "$SEMANTICS_DATA_DIR/projects" "$SEMANTICS_DATA_DIR/mongodb" "$SEMANTICS_DATA_DIR/.duckdb" /tmp/redis
+  chown archmax:archmax "$SEMANTICS_DATA_DIR" "$SEMANTICS_DATA_DIR/projects" "$SEMANTICS_DATA_DIR/mongodb" /tmp/redis /var/log
   # The DuckDB extension cache lives on the persistent volume. Reclaim it for
   # archmax (older images created it as root) so the app can create the
   # version-specific extension dir (e.g. extensions/v1.5.3) after a DuckDB
   # upgrade instead of failing with "Permission denied".
-  chown -R archmax:archmax "$ARCHMAX_DATA_DIR/.duckdb"
+  chown -R archmax:archmax "$SEMANTICS_DATA_DIR/.duckdb"
   exec gosu archmax "$0" "$@"
 fi
 
@@ -30,9 +42,9 @@ fi
 
 # --- Embedded MongoDB (when MONGODB_URI is not provided) ---
 if [ -z "$MONGODB_URI" ]; then
-  mkdir -p "$ARCHMAX_DATA_DIR/mongodb"
+  mkdir -p "$SEMANTICS_DATA_DIR/mongodb"
   echo "[entrypoint] Starting embedded MongoDB..."
-  mongod --bind_ip 127.0.0.1 --dbpath "$ARCHMAX_DATA_DIR/mongodb" --logpath /var/log/mongod.log --fork
+  mongod --bind_ip 127.0.0.1 --dbpath "$SEMANTICS_DATA_DIR/mongodb" --logpath /var/log/mongod.log --fork
 
   TRIES=0
   until mongosh --quiet --eval 'db.runCommand({ping:1})' > /dev/null 2>&1; do

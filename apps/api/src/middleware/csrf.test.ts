@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { csrfMiddleware } from "./csrf";
 
 beforeAll(() => {
-  process.env.APP_BASE_URL = "https://archmax.example.com";
+  process.env.APP_BASE_URL = "https://semantics.example.com";
   process.env.CORS_ORIGINS = "http://localhost:5173,https://app.example.com";
   process.env.MONGODB_URI = "mongodb://localhost:27017/test";
   process.env.BETTER_AUTH_SECRET = "test-secret-with-at-least-32-chars-long";
@@ -138,7 +138,7 @@ describe("csrfMiddleware", () => {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        origin: "https://archmax.example.com",
+        origin: "https://semantics.example.com",
       },
       body: "{}",
     });
@@ -152,7 +152,7 @@ describe("csrfMiddleware", () => {
       headers: {
         "content-type": "application/json",
         origin: "https://evil.example.com",
-        "x-forwarded-host": "archmax.example.com",
+        "x-forwarded-host": "semantics.example.com",
         "x-forwarded-proto": "https",
       },
       body: "{}",

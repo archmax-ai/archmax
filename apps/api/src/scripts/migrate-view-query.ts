@@ -10,7 +10,7 @@
  * working after the auto-derivation code path is removed.
  *
  * What it does:
- *   1. Walks every `<ARCHMAX_DATA_DIR>/projects/<projectId>/src/<modelName>/<datasetName>.yaml`.
+ *   1. Walks every `<SEMANTICS_DATA_DIR>/projects/<projectId>/src/<modelName>/<datasetName>.yaml`.
  *   2. Skips datasets whose COMMON extension already has a non-empty
  *      `view_query` (so it is safe to re-run).
  *   3. For datasets with at least one field, builds a SELECT body using the
@@ -37,6 +37,7 @@ import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { load as loadYaml, dump as dumpYaml } from "js-yaml";
 import { datasetFileSchema, type Dataset } from "@archmax/core/services/semantic-model-schema";
+import { resolveDataDirEnv } from "@archmax/core/config/data-dir";
 
 interface MigrationCounts {
   total: number;
@@ -303,9 +304,9 @@ function formatSummary(counts: MigrationCounts): string {
 }
 
 async function main(): Promise<void> {
-  const baseDir = process.env.ARCHMAX_DATA_DIR
-    ? resolve(process.env.ARCHMAX_DATA_DIR, "projects")
-    : resolve("data", "projects");
+  const { dataDir, deprecationWarning } = resolveDataDirEnv(process.env);
+  if (deprecationWarning) console.warn(deprecationWarning);
+  const baseDir = resolve(dataDir ?? "data", "projects");
   const counts = await runMigration({ baseDir });
   console.log(formatSummary(counts));
   process.exit(counts.errored > 0 ? 1 : 0);

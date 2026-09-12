@@ -29,7 +29,7 @@ vi.mock("../config/env", () => ({
     BETTER_AUTH_SECRET: "a".repeat(32),
     UI_PASSWORD: "password123",
     REDIS_URL: "redis://127.0.0.1:6379",
-    ARCHMAX_DATA_DIR: "/tmp/health-test-data",
+    SEMANTICS_DATA_DIR: "/tmp/health-test-data",
   }),
 }));
 
@@ -114,7 +114,7 @@ describe("checkEnvVars", () => {
       BETTER_AUTH_SECRET: "a".repeat(32),
       UI_PASSWORD: undefined,
       REDIS_URL: undefined,
-      ARCHMAX_DATA_DIR: "/tmp",
+      SEMANTICS_DATA_DIR: "/tmp",
     });
     const result = await checkEnvVars();
     expect(result.status).toBe("missing");
@@ -129,7 +129,7 @@ describe("checkDataDir", () => {
       BETTER_AUTH_SECRET: "a".repeat(32),
       UI_PASSWORD: "password123",
       REDIS_URL: "redis://127.0.0.1:6379",
-      ARCHMAX_DATA_DIR: "/tmp/health-test-data",
+      SEMANTICS_DATA_DIR: "/tmp/health-test-data",
     });
   });
 
@@ -154,7 +154,7 @@ describe("runHealthChecks", () => {
       BETTER_AUTH_SECRET: "a".repeat(32),
       UI_PASSWORD: "password123",
       REDIS_URL: "redis://127.0.0.1:6379",
-      ARCHMAX_DATA_DIR: "/tmp/health-test-data",
+      SEMANTICS_DATA_DIR: "/tmp/health-test-data",
     });
     mockGetRedis.mockReturnValue({ ping: vi.fn().mockResolvedValue("PONG") });
     mockFsAccess.mockResolvedValue(undefined);

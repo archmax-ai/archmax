@@ -29,7 +29,7 @@ export function DisclaimerDialog({ onAccept }: DisclaimerDialogProps) {
         <DialogHeader>
           <DialogTitle>Before You Begin</DialogTitle>
           <DialogDescription>
-            Please review and acknowledge the following before using archmax.
+            Please review and acknowledge the following before using archmax semantics.
           </DialogDescription>
         </DialogHeader>
 

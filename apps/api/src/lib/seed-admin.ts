@@ -1,6 +1,8 @@
 import { auth } from "./auth";
 import { getEnv } from "@archmax/core/config/env";
 
+// Retained across the product rename: the admin user is reconciled by this address on every startup,
+// so changing it would orphan the existing admin record and its password.
 const ADMIN_EMAIL = "admin@archmax.local";
 
 type AuthCtx = Awaited<typeof auth.$context>;

@@ -5,11 +5,11 @@ description: How to create and manage semantic models that describe your databas
 
 Semantic models are YAML files that describe your database tables as datasets with typed fields, relationships, and metrics. They follow the [Open Semantic Interchange (OSI)](https://github.com/open-semantic-interchange/OSI) spec and use DuckDB SQL syntax for expressions.
 
-archmax uses the OSI YAML format as its internal storage format — every dataset, field, relationship, and metric is persisted as spec-compliant YAML on disk. When AI agents request model information through MCP tools, archmax converts the OSI YAML into a **compressed markdown digest** on-the-fly. This digest preserves all semantically relevant information (field types, descriptions, enums, relationships, examples) while using **3–5× fewer tokens** than the equivalent YAML, making agent interactions significantly cheaper and faster.
+archmax semantics uses the OSI YAML format as its internal storage format — every dataset, field, relationship, and metric is persisted as spec-compliant YAML on disk. When AI agents request model information through MCP tools, archmax semantics converts the OSI YAML into a **compressed markdown digest** on-the-fly. This digest preserves all semantically relevant information (field types, descriptions, enums, relationships, examples) while using **3–5× fewer tokens** than the equivalent YAML, making agent interactions significantly cheaper and faster.
 
 ## File Structure
 
-Each project stores its semantic models under `<ARCHMAX_DATA_DIR>/projects/<projectId>/src/`. A model consists of a root file and per-dataset files:
+Each project stores its semantic models under `<SEMANTICS_DATA_DIR>/projects/<projectId>/src/`. A model consists of a root file and per-dataset files:
 
 ```
 src/
@@ -183,7 +183,7 @@ You can also create and edit models manually through the YAML files or the admin
 
 ### Project Instructions (`AGENTS.md`)
 
-You can give the builder agent durable, project-specific guidance by adding an optional `AGENTS.md` file at the **root of the project directory** (`<ARCHMAX_DATA_DIR>/projects/<projectId>/AGENTS.md`). When present, its contents are loaded into the agent's instructions at the start of every conversation, so it is a good place for a domain glossary, naming conventions, or standing rules like "always add an `ai_context` description to every field". The file is optional — if it is absent the agent simply uses its defaults — and it is treated as authoritative for the project, taking precedence over the agent's general defaults when they conflict.
+You can give the builder agent durable, project-specific guidance by adding an optional `AGENTS.md` file at the **root of the project directory** (`<SEMANTICS_DATA_DIR>/projects/<projectId>/AGENTS.md`). When present, its contents are loaded into the agent's instructions at the start of every conversation, so it is a good place for a domain glossary, naming conventions, or standing rules like "always add an `ai_context` description to every field". The file is optional — if it is absent the agent simply uses its defaults — and it is treated as authoritative for the project, taking precedence over the agent's general defaults when they conflict.
 
 This file is versioned alongside the rest of the project, and it is **not** auto-generated — it is yours to author and edit.
 

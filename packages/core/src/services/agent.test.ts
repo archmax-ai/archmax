@@ -9,7 +9,7 @@ describe("ValidatingFilesystemBackend", () => {
   let backend: ValidatingFilesystemBackend;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "archmax-test-"));
+    dir = await mkdtemp(join(tmpdir(), "semantics-test-"));
     backend = new ValidatingFilesystemBackend({ rootDir: dir });
   });
 

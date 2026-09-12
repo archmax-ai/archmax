@@ -5,19 +5,16 @@ import { connectDB } from "../infra/db";
 import { Connection, type IConnectionDocument } from "../models/index";
 import type { SemanticModel } from "./semantic-model-schema";
 import { decryptConnectionCredentials } from "../infra/crypto";
-import {
-  customFirebirdEnabled,
-  firebirdExtensionRepository,
-  getEnv,
-} from "../config/env";
+import { getEnv } from "../config/env";
 import { validateSqlAst } from "./sql-ast-validation";
+import { SIMPLE_IDENTIFIER_RE } from "./sql-identifier";
 
 const SAFE_PROJECT_ID = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
 
 /**
  * Resolve the legacy on-disk DuckDB file path for a project, validating
  * `projectId` against the same regex `SemanticModelFileService` uses so we
- * never end up touching files outside `<ARCHMAX_DATA_DIR>/projects/`.
+ * never end up touching files outside `<SEMANTICS_DATA_DIR>/projects/`.
  *
  * Project instances are now in-memory and per-process (see
  * `setupProjectInstance`), so nothing creates this file anymore. It is kept
@@ -38,18 +35,12 @@ async function deleteDuckdbFiles(path: string): Promise<void> {
 }
 
 /**
- * Create a fresh in-memory `DuckDBInstance`, applying the
- * `allow_unsigned_extensions` startup option only when the operator has
- * enabled the custom Firebird extension (`DUCKDB_ENABLE_CUSTOM_FIREBIRD`),
- * which is itself unsigned. Firebird is the only feature that requires
- * unsigned extensions. The option can only be set at instance-creation time
- * (not via `SET`), so every call site that opens an instance routes through
- * here to get a consistent configuration.
+ * Create a fresh in-memory `DuckDBInstance`. Unsigned extensions are never
+ * allowed: every extension is loaded from the DuckDB core or community
+ * registry, so no instance-creation option is needed. Call sites route through
+ * here so instance configuration stays in one place.
  */
 export async function createDuckDBInstance(): Promise<DuckDBInstance> {
-  if (customFirebirdEnabled()) {
-    return DuckDBInstance.create(undefined, { allow_unsigned_extensions: "true" });
-  }
   return DuckDBInstance.create();
 }
 
@@ -442,8 +433,6 @@ function extensionForType(type: string): string | null {
       return "mssql";
     case "sqlite":
       return "sqlite";
-    case "firebird":
-      return "firebird";
     default:
       return null;
   }
@@ -451,9 +440,8 @@ function extensionForType(type: string): string | null {
 
 /**
  * Decrypt a connection's `connectionConfig`, normalising a Mongoose subdocument
- * to a plain object first. Shared by `buildAttachString`, the Firebird ATTACH
- * option builder, and the Iceberg attach path so credential handling lives in
- * one place.
+ * to a plain object first. Shared by `buildAttachString` and the Iceberg attach
+ * path so credential handling lives in one place.
  */
 function getDecryptedConfig(conn: IConnectionDocument): IConnectionDocument["connectionConfig"] {
   const key = getEnv().ENCRYPTION_KEY || null;
@@ -469,37 +457,6 @@ function getDecryptedConfig(conn: IConnectionDocument): IConnectionDocument["con
 /** Quote a value as a DuckDB single-quoted string literal (escaping `'`). */
 function sqlString(value: string): string {
   return `'${String(value).replace(/'/g, "''")}'`;
-}
-
-/**
- * Build the Firebird-specific ATTACH option list (comma-prefixed, ready to
- * append inside the `(TYPE FIREBIRD …)` clause), e.g.
- * `, HOST 'h', PORT 3050, DATABASE 'C:\\db.fdb', USER 'u', PASSWORD 'p', CHARSET 'UTF8'`.
- *
- * The custom Firebird extension resolves each connection field from ATTACH
- * options first (then a DSN, then env), so passing the structured fields as
- * options sidesteps URI parsing entirely. This avoids the `std::stoi` crash a
- * Windows drive-letter colon causes when the same values are jammed into a DSN
- * path, and it safely carries passwords/paths containing URI metacharacters
- * (`@`, `/`, `?`, `:`) that the extension's DSN parser does not URL-decode.
- *
- * Returns `""` when a raw `uri` is configured — that case attaches the URI as
- * the ATTACH path instead (see `buildAttachString`).
- */
-export function buildFirebirdAttachOptions(conn: IConnectionDocument): string {
-  const cfg = getDecryptedConfig(conn);
-  if (cfg.uri) return "";
-
-  const parts: string[] = [];
-  if (cfg.host) parts.push(`HOST ${sqlString(String(cfg.host))}`);
-  const port = Number(cfg.port ?? 3050);
-  parts.push(`PORT ${Number.isFinite(port) ? port : 3050}`);
-  if (cfg.database) parts.push(`DATABASE ${sqlString(String(cfg.database))}`);
-  if (cfg.user) parts.push(`USER ${sqlString(String(cfg.user))}`);
-  if (cfg.password) parts.push(`PASSWORD ${sqlString(String(cfg.password))}`);
-  parts.push(`CHARSET ${sqlString(String(cfg.charset ?? "UTF8"))}`);
-
-  return `, ${parts.join(", ")}`;
 }
 
 export function buildAttachString(conn: IConnectionDocument): string {
@@ -523,14 +480,6 @@ export function buildAttachString(conn: IConnectionDocument): string {
       const port = cfg.port ?? 3306;
       return `host=${cfg.host} port=${port} database=${cfg.database} user=${cfg.user} password=${cfg.password}`;
     }
-    case "firebird":
-      // Structured Firebird config is passed via ATTACH options (see
-      // `buildFirebirdAttachOptions`), not the ATTACH path. The path is left
-      // empty so the extension does NOT try to parse it as a DSN — a `key=value`
-      // or Windows-path (`C:\…`) value there makes its port parser (`std::stoi`)
-      // throw "Invalid Error: stoi". A raw `uri` is handled by the pass-through
-      // above.
-      return "";
     case "sqlite":
       return cfg.database ?? "";
     default:
@@ -759,25 +708,8 @@ export async function withRecoverableProjectInstance<T>(
 
 const ICEBERG_EXTENSIONS = ["iceberg", "httpfs"] as const;
 
-/**
- * A connection that cannot be attached under the current environment is
- * intentionally skipped during setup (see `setupProjectInstance`). It must be
- * treated identically by `isReady` and the `needsNewExtension` check below,
- * otherwise the readiness/extension probes flag it as perpetually pending and
- * every `getProjectInstance` call tears down and rebuilds the cached instance
- * (re-attaching all other sources) — severe churn on every federated query.
- *
- * Currently this covers an active `firebird` connection while
- * `DUCKDB_ENABLE_CUSTOM_FIREBIRD` is off: installing the unsigned extension or
- * attaching would throw, so setup skips it and we exclude it everywhere.
- */
-function isConnectionSkipped(conn: IConnectionDocument): boolean {
-  return conn.type === "firebird" && !customFirebirdEnabled();
-}
-
 function isReady(entry: ProjectDuckDB, connections: IConnectionDocument[]): boolean {
   return connections.every((conn) => {
-    if (isConnectionSkipped(conn)) return true;
     if (conn.type === "iceberg") {
       return ICEBERG_EXTENSIONS.every((e) => entry.loadedExtensions.has(e)) && entry.attachedSlugs.has(conn.slug);
     }
@@ -796,7 +728,6 @@ async function setupProjectInstance(
 
   if (entry) {
     const needsNewExtension = connections.some((conn) => {
-      if (isConnectionSkipped(conn)) return false;
       if (conn.type === "iceberg") {
         return ICEBERG_EXTENSIONS.some((e) => !entry!.loadedExtensions.has(e));
       }
@@ -836,18 +767,6 @@ async function setupProjectInstance(
 
   for (const conn of connections) {
     if (entry.attachedSlugs.has(conn.slug)) continue;
-    // A connection that cannot be attached under the current environment must
-    // not abort the whole project instance: installing the unsigned extension
-    // (or attaching) would throw and break DuckDB for every source. Skip it
-    // instead — it simply fails to attach while disabled. `isReady` and the
-    // `needsNewExtension` probe apply the same predicate so the skipped source
-    // does not trigger a cache rebuild on every call.
-    if (isConnectionSkipped(conn)) {
-      console.warn(
-        `[duckdb] Skipping firebird connection '${conn.slug}' — DUCKDB_ENABLE_CUSTOM_FIREBIRD is not enabled`,
-      );
-      continue;
-    }
     await attachConnection(entry, conn);
   }
 
@@ -870,36 +789,43 @@ export async function ensureProjectExtensionLoaded(
 ): Promise<void> {
   await connectDB();
   const connections = await Connection.find({ project: projectId, isActive: true }).lean();
-  await getProjectInstance(projectId, connections, { readOnly: true });
-  const entry = projectInstances.get(projectId);
-  if (!entry) {
-    throw new Error(`No DuckDB instance for project ${projectId}`);
-  }
 
-  if (options?.loadOnly) {
-    const db = await entry.instance.connect();
-    try {
-      await db.run(`LOAD ${extension}`);
-    } finally {
-      db.disconnectSync();
+  // Hold a usage ref for the whole install/load so a concurrent self-heal
+  // (`withRecoverableProjectInstance` disposing a poisoned instance) cannot
+  // `closeSync()` the native instance between `getProjectInstance` and our
+  // `connect()`/`INSTALL`/`LOAD` — the same use-after-close the query paths
+  // guard against. Re-fetch a fresh ref-counted instance if the cache was
+  // replaced under us.
+  let acquireAttempts = 0;
+  for (;;) {
+    const instance = await getProjectInstance(projectId, connections, { readOnly: true });
+    const entry = acquireInstanceRef(projectId, instance);
+    if (!entry) {
+      if (++acquireAttempts > MAX_INSTANCE_ACQUIRE_ATTEMPTS) {
+        throw new Error(
+          `Could not acquire a stable DuckDB instance for project ${projectId} after repeated disposals`,
+        );
+      }
+      continue;
     }
-    entry.loadedExtensions.add(extension);
-    return;
-  }
-
-  if (!entry.loadedExtensions.has(extension)) {
-    await installAndLoadExtension(entry.instance, extension, {
-      fromCommunity: options?.fromCommunity,
-    });
-    entry.loadedExtensions.add(extension);
-    return;
-  }
-
-  const db = await entry.instance.connect();
-  try {
-    await db.run(`LOAD ${extension}`);
-  } finally {
-    db.disconnectSync();
+    try {
+      if (options?.loadOnly || entry.loadedExtensions.has(extension)) {
+        const db = await entry.instance.connect();
+        try {
+          await db.run(`LOAD ${extension}`);
+        } finally {
+          db.disconnectSync();
+        }
+      } else {
+        await installAndLoadExtension(entry.instance, extension, {
+          fromCommunity: options?.fromCommunity,
+        });
+      }
+      entry.loadedExtensions.add(extension);
+      return;
+    } finally {
+      releaseInstanceRef(entry);
+    }
   }
 }
 
@@ -910,16 +836,6 @@ async function installAndLoadExtension(
 ): Promise<void> {
   const db = await instance.connect();
   try {
-    // The custom (unsigned) Firebird extension is installed from the fixed
-    // archmax-hosted repository: set `custom_extension_repository` then a
-    // plain INSTALL. The repo is single-quote escaped before interpolation.
-    if (ext === "firebird") {
-      const repo = firebirdExtensionRepository().replace(/'/g, "''");
-      await db.run(`SET custom_extension_repository = '${repo}'`);
-      await db.run("INSTALL firebird");
-      await db.run("LOAD firebird");
-      return;
-    }
     const fromCommunity = options?.fromCommunity ?? COMMUNITY_EXTENSIONS.has(ext);
     const installSuffix = fromCommunity ? " FROM community" : "";
     await db.run(`INSTALL ${ext}${installSuffix}`);
@@ -968,10 +884,9 @@ async function attachConnection(entry: ProjectDuckDB, conn: IConnectionDocument)
   try {
     const connStr = buildAttachString(conn).replace(/'/g, "''");
     const readOnlyClause = entry.readOnly ? ", READ_ONLY" : "";
-    const extraOptions = conn.type === "firebird" ? buildFirebirdAttachOptions(conn) : "";
     await withQueryTimeout(
       db,
-      () => db.run(`ATTACH '${connStr}' AS ${conn.slug} (TYPE ${ext.toUpperCase()}${readOnlyClause}${extraOptions})`),
+      () => db.run(`ATTACH '${connStr}' AS ${conn.slug} (TYPE ${ext.toUpperCase()}${readOnlyClause})`),
       ATTACH_TIMEOUT_MS,
     );
     entry.attachedSlugs.add(conn.slug);
@@ -1026,16 +941,6 @@ async function attachIcebergCatalog(entry: ProjectDuckDB, conn: IConnectionDocum
   }
 }
 
-export async function detachIcebergCatalog(instance: DuckDBInstance, slug: string): Promise<void> {
-  const db = await instance.connect();
-  try {
-    await db.run(`DETACH ${slug}`);
-    await db.run(`DROP SECRET IF EXISTS ${icebergSecretName(slug)}`);
-  } finally {
-    db.disconnectSync();
-  }
-}
-
 async function disableExternalAccess(instance: DuckDBInstance): Promise<void> {
   const db = await instance.connect();
   try {
@@ -1050,12 +955,6 @@ async function disableExternalAccess(instance: DuckDBInstance): Promise<void> {
  * Used for connectivity tests so results are not affected by cached state.
  */
 export async function testSingleConnection(conn: IConnectionDocument): Promise<DuckDBInstance> {
-  // Defensive gate: testing a firebird connection installs/loads the unsigned
-  // extension, so refuse when the capability is off even if a caller forgot to
-  // check (the connections route gates this too).
-  if (conn.type === "firebird" && !customFirebirdEnabled()) {
-    throw new Error("Firebird connections are not enabled on this server");
-  }
   if (conn.type === "iceberg") {
     return testIcebergConnection(conn);
   }
@@ -1069,8 +968,7 @@ export async function testSingleConnection(conn: IConnectionDocument): Promise<D
   const db = await instance.connect();
   try {
     const connStr = buildAttachString(conn).replace(/'/g, "''");
-    const extraOptions = conn.type === "firebird" ? buildFirebirdAttachOptions(conn) : "";
-    await db.run(`ATTACH '${connStr}' AS ${conn.slug} (TYPE ${ext.toUpperCase()}, READ_ONLY${extraOptions})`);
+    await db.run(`ATTACH '${connStr}' AS ${conn.slug} (TYPE ${ext.toUpperCase()}, READ_ONLY)`);
   } finally {
     db.disconnectSync();
   }
@@ -1153,8 +1051,6 @@ export interface MaterialiseViewsResult {
   failed: Array<{ dataset: string; error: string }>;
 }
 
-const SIMPLE_IDENT_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
-
 /**
  * Synthesise a "mirror" view body for a dataset that has not authored
  * its own `view_query`. The inferred body projects every declared
@@ -1195,7 +1091,7 @@ export function inferDefaultViewQuery(
     const quotedName = quoteIdentifier(f.name);
     const expr = f.expression?.dialects?.[0]?.expression ?? f.name;
     if (expr === f.name) return quotedName;
-    if (SIMPLE_IDENT_RE.test(expr)) return `${quoteIdentifier(expr)} AS ${quotedName}`;
+    if (SIMPLE_IDENTIFIER_RE.test(expr)) return `${quoteIdentifier(expr)} AS ${quotedName}`;
     return `${expr} AS ${quotedName}`;
   });
   return `SELECT\n  ${columns.join(",\n  ")}\nFROM ${dataset.source}`;
@@ -1366,7 +1262,7 @@ async function materialiseModelViewsLocked(
   // is too permissive to gate DDL interpolation. Fail closed and mark
   // every dataset as failed so callers (`execute_query`, `runModelQuery`)
   // refuse to reuse any pre-existing scoped views with the same prefix.
-  if (!SIMPLE_IDENT_RE.test(model.name)) {
+  if (!SIMPLE_IDENTIFIER_RE.test(model.name)) {
     const errMsg =
       `Model name "${model.name}" is not a valid SQL identifier ` +
       `(must match [a-zA-Z_][a-zA-Z0-9_]*); refusing to materialise views.`;
@@ -1403,7 +1299,7 @@ async function materialiseModelViewsLocked(
       // the resulting `CREATE OR REPLACE VIEW` even after quote
       // doubling. Any other character is safely handled by
       // `quoteIdentifier`'s `"` doubling — including hyphens, dots,
-      // and embedded `"` — so we don't gate on SIMPLE_IDENT_RE here.
+      // and embedded `"` — so we don't gate on SIMPLE_IDENTIFIER_RE here.
       if (/[\u0000-\u001F]/.test(ds.name)) {
         const errMsg = `Dataset name contains a control character; refusing to materialise.`;
         console.warn(`[materialiseModelViews] Skipped dataset "${ds.name}" in model "${model.name}": ${errMsg}`);

@@ -26,7 +26,7 @@ vi.mock("@archmax/core/services/mcp-tools", () => ({
   EXECUTE_STORED_QUERY_DESCRIPTION: "Re-run a stored query",
 }));
 
-import { writeCallLog, registerArchmaxTools, type McpToolContext } from "./archmax-server";
+import { writeCallLog, registerSemanticsTools, type McpToolContext } from "./semantics-server";
 
 function makeCtx(overrides: Partial<McpToolContext> = {}): McpToolContext {
   return {
@@ -165,10 +165,10 @@ describe("writeCallLog", () => {
   });
 });
 
-describe("registerArchmaxTools", () => {
+describe("registerSemanticsTools", () => {
   it("registers all six tools", async () => {
     const { server, handlers } = createMockServer();
-    await registerArchmaxTools(server as never, makeCtx());
+    await registerSemanticsTools(server as never, makeCtx());
 
     expect(handlers.size).toBe(6);
     expect([...handlers.keys()]).toEqual([
@@ -188,7 +188,7 @@ describe("loggedTool (via registered handlers)", () => {
   beforeEach(async () => {
     const mock = createMockServer();
     handlers = mock.handlers;
-    await registerArchmaxTools(mock.server as never, makeCtx());
+    await registerSemanticsTools(mock.server as never, makeCtx());
   });
 
   it("returns tool result and writes a call log for successful calls", async () => {

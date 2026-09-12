@@ -14,6 +14,7 @@ function applyTheme(theme: Theme) {
 }
 
 export function useTheme() {
+  // Storage key retained across the product rename so existing theme choices survive the upgrade.
   const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem("archmax-theme") as Theme | null;
     return stored ?? "dark";

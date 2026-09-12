@@ -98,7 +98,7 @@ export async function checkEnvVars(): Promise<CheckResult> {
 }
 
 export async function checkDataDir(): Promise<CheckResult> {
-  const dir = getEnv().ARCHMAX_DATA_DIR;
+  const dir = getEnv().SEMANTICS_DATA_DIR;
   try {
     await fs.access(dir, fs.constants.W_OK);
     return { status: "ok", path: dir };
