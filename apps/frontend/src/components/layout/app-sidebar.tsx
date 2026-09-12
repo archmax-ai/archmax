@@ -137,9 +137,9 @@ export function AppSidebar({
               <Link
                 to="/"
                 aria-label="archmax semantics"
-                className="flex min-w-0 items-center rounded-md px-2 py-1 transition-opacity hover:opacity-80"
+                className="flex min-w-0 items-center rounded-md px-1 py-1 transition-opacity hover:opacity-80"
               >
-                <span className="truncate text-sm font-semibold tracking-tight">
+                <span className="truncate text-xs font-semibold tracking-tight">
                   archmax semantics
                 </span>
               </Link>
@@ -153,7 +153,7 @@ export function AppSidebar({
           <button
             onClick={onToggle}
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-foreground/[0.05] text-sidebar-foreground/60",
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-foreground/[0.05] text-sidebar-foreground/60",
               collapsed && "mx-auto",
             )}
           >
