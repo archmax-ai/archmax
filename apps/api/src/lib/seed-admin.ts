@@ -11,16 +11,19 @@ export async function seedAdmin(ctx?: AuthCtx): Promise<void> {
   const env = getEnv();
   const resolvedCtx = ctx ?? (await auth.$context);
 
-  const existing = await resolvedCtx.internalAdapter.findUserByEmail(
-    ADMIN_EMAIL,
-  );
+  const existing = await resolvedCtx.internalAdapter.findUserByEmail(ADMIN_EMAIL, {
+    includeAccounts: false,
+  });
 
   if (!existing) {
-    const created = await resolvedCtx.internalAdapter.createUser({
-      name: env.UI_USERNAME,
-      email: ADMIN_EMAIL,
-      username: env.UI_USERNAME,
-    });
+    const created = await resolvedCtx.internalAdapter.createUser(
+      {
+        name: env.UI_USERNAME,
+        email: ADMIN_EMAIL,
+        username: env.UI_USERNAME,
+      },
+      { method: "email-password" },
+    );
     if (!created) throw new Error("User creation failed");
     await createCredential(resolvedCtx, created.id, env.UI_PASSWORD);
     console.log(`Admin user "${env.UI_USERNAME}" seeded.`);
