@@ -34,8 +34,10 @@ jobs:
           push: true
           tags: ghcr.io/archmax-ai/semantics:pr-${{ github.event.pull_request.number }}
           build-args: APP_VERSION=pr-${{ github.event.pull_request.number }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha,scope=pr
+            type=gha,scope=release
+          cache-to: type=gha,mode=max,scope=pr,ignore-error=true
 
       - name: Comment on PR
         uses: actions/github-script@v9
