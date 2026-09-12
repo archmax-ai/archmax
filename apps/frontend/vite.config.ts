@@ -11,15 +11,21 @@ export default defineConfig({
     },
   },
   server: {
+    // The API trusts only this origin (Better Auth trustedOrigins + CSRF); if the
+    // port is taken, fail instead of silently moving to one the API rejects.
     port: 5173,
+    strictPort: true,
     proxy: {
+      // xfwd forwards the client IP so Better Auth's rate limiter can key per client.
       "/api": {
         target: "http://localhost:3000",
         changeOrigin: true,
+        xfwd: true,
       },
       "/mcp": {
         target: "http://localhost:3000",
         changeOrigin: true,
+        xfwd: true,
       },
     },
   },
