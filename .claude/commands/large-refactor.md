@@ -1,7 +1,4 @@
 ---
-name: /large-refactor
-id: large-refactor
-category: Quality
 description: Scan the codebase for structural improvements and execute them safely.
 ---
 

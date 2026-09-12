@@ -37,6 +37,16 @@ The system SHALL provide a `Connection` Mongoose model with the following fields
 - **WHEN** a connection is created with any supported type (postgres, mysql, mssql, sqlite, duckdb, iceberg)
 - **THEN** the connection is accepted and stored
 
+#### Scenario: Firebird type accepted only when active
+
+- **WHEN** a connection is created or updated with `type: "firebird"`
+- **THEN** a 400 validation error is returned, because the Firebird capability no longer exists and can never be active, so `firebird` is not a supported connection type
+
+#### Scenario: Charset config field rejected
+
+- **WHEN** a connection is created or updated with `connectionConfig.charset` set to any value
+- **THEN** a 400 validation error is returned by the `.strict()` schema, because `charset` is no longer a defined field
+
 #### Scenario: Unknown connection config fields rejected
 
 - **WHEN** a connection is created or updated with extra fields in `connectionConfig` not defined in the schema (e.g., `injectedField: "malicious"`)
@@ -373,3 +383,25 @@ The API SHALL expose `POST /api/projects/:projectId/connections/reinit` that dis
 - **WHEN** a client calls `POST /api/projects/:projectId/connections/reinit` with a `projectId` that does not exist
 - **THEN** the response is HTTP `404`
 
+### Requirement: No Custom or Unsigned DuckDB Extensions
+
+Project DuckDB instances SHALL be created without the `allow_unsigned_extensions` option, so unsigned extensions can never be loaded. No code path SHALL set `custom_extension_repository` or install a DuckDB extension from a custom repository.
+
+Extensions SHALL be obtained only from the DuckDB core registry (e.g. `INSTALL postgres`) or the DuckDB community registry (e.g. `INSTALL mssql FROM community`). The federation console SHALL continue to reject `INSTALL … FROM '<source>'` statements from arbitrary sources.
+
+#### Scenario: Instances created without unsigned-extension support
+
+- **WHEN** a project DuckDB instance is created
+- **THEN** it is created via `DuckDBInstance.create()` with no `allow_unsigned_extensions` option
+- **AND** no environment variable can re-enable unsigned-extension loading
+
+#### Scenario: No custom extension repository is configured
+
+- **WHEN** any connection type is attached or tested
+- **THEN** no `SET custom_extension_repository` statement is issued
+- **AND** every extension install targets either the core or the community registry
+
+#### Scenario: Console rejects installs from arbitrary sources
+
+- **WHEN** the federation console receives `INSTALL <extension> FROM '<source>'`
+- **THEN** it rejects the statement with a 400 error

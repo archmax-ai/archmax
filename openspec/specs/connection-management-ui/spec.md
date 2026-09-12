@@ -146,4 +146,3 @@ The Data Sources page header SHALL display a "Re-explore schemas" button alongsi
 
 - **WHEN** the project has no active connections
 - **THEN** the "Re-explore schemas" button is rendered in a disabled state so it cannot be activated
-
