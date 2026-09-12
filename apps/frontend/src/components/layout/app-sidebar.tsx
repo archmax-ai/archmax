@@ -133,10 +133,16 @@ export function AppSidebar({
       >
         <div className="flex h-14 items-center justify-between px-3">
           {!collapsed && (
-            <div className="flex items-center gap-1.5 pl-1">
-              <span className="text-lg font-semibold tracking-tight whitespace-nowrap">
-                archmax semantics
-              </span>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Link
+                to="/"
+                aria-label="archmax semantics"
+                className="flex min-w-0 items-center rounded-md px-2 py-1 transition-opacity hover:opacity-80"
+              >
+                <span className="truncate text-sm font-semibold tracking-tight">
+                  archmax semantics
+                </span>
+              </Link>
               {versionData?.version && (
                 <span className="text-[10px] leading-none rounded-full px-1.5 py-0.5 bg-foreground/[0.08] text-sidebar-foreground/50 font-medium">
                   v{versionData.version}
