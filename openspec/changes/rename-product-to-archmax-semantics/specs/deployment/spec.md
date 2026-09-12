@@ -33,12 +33,18 @@ The deprecated variable SHALL remain supported for at least one minor release so
 
 ### Requirement: Container Image Coordinates
 
-The published container image SHALL be `ghcr.io/archmax-ai/semantics`. All deployment documentation, the repo-root `docker-compose.yml`, and `docker-compose.ci.yml` SHALL reference this image.
+The published container image SHALL be `ghcr.io/archmax-ai/semantics`. The CI workflows SHALL publish release images (`latest` and the version tag) and pull-request images (`pr-<number>`) under this exact name, independent of the GitHub repository name. All deployment documentation, the repo-root `docker-compose.yml`, and `docker-compose.ci.yml` SHALL reference this image.
 
 #### Scenario: Compose file references the semantics image
 
 - **WHEN** a user reads `docker-compose.yml`
 - **THEN** the application service image is `ghcr.io/archmax-ai/semantics:latest`
+
+#### Scenario: CI publishes under the fixed image name
+
+- **WHEN** the release workflow runs, or a pull request triggers the Docker build
+- **THEN** the image is pushed as `ghcr.io/archmax-ai/semantics:<tag>` regardless of the repository's name
+- **AND** the pull-request comment shows a pull command for `ghcr.io/archmax-ai/semantics:pr-<number>`
 
 #### Scenario: Documentation pull command
 

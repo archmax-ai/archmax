@@ -118,7 +118,7 @@ Default credentials are `admin` / `testpass123`. To override, set `UI_USERNAME` 
 
 **MSSQL note:** The SQL Server container (`mcr.microsoft.com/mssql/server:2022-latest`) requires at least 2 GB RAM and only runs on `linux/amd64`. On Apple Silicon Macs, Docker Desktop runs it under Rosetta emulation, which is slower to start. The compose file pins `platform: linux/amd64` for this service.
 
-In CI, E2E tests run automatically after the Docker image is built on every pull request.
+In CI, E2E tests run automatically after the Docker image is built on every pull request. That image is published as `ghcr.io/archmax-ai/semantics:pr-<number>` (the image name is fixed in the workflows and independent of the repository name), so you can run the same stack locally against a PR build with `APP_IMAGE=ghcr.io/archmax-ai/semantics:pr-<number>`.
 
 ## Building
 

@@ -93,8 +93,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ needs.release.outputs.version }}
+            ghcr.io/archmax-ai/semantics:latest
+            ghcr.io/archmax-ai/semantics:${{ needs.release.outputs.version }}
           build-args: APP_VERSION=${{ needs.release.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

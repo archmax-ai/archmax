@@ -244,11 +244,13 @@ Releases are created automatically when a labeled PR is merged to `main`. No man
 2. When the PR merges, the release workflow:
    - Creates a git tag with the new version
    - Publishes a GitHub Release with auto-generated notes
-   - Builds and pushes a Docker image to `ghcr.io`
+   - Builds and pushes the Docker image to `ghcr.io/archmax-ai/semantics`
 
 3. PRs without a release label are merged normally with no release.
 
 ### Docker images
+
+Images are always published as `ghcr.io/archmax-ai/semantics` — the name is fixed in the workflows and does not follow the GitHub repository name. Every pull request also publishes `ghcr.io/archmax-ai/semantics:pr-<number>` (the bot comments the pull command on the PR), which you can pass as `APP_IMAGE` to the E2E stack.
 
 Released images are pushed to GitHub Container Registry:
 
