@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, mkdir, writeFile, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import yaml from "js-yaml";
+import { load as loadYaml, dump as dumpYaml } from "js-yaml";
 import { assertSafeSegment, SemanticModelFileService } from "./semantic-model-files";
 
 describe("assertSafeSegment", () => {
@@ -64,7 +64,7 @@ describe("SemanticModelFileService.updateModelExtensions", () => {
     svc = new SemanticModelFileService(tmpDir);
     const srcDir = join(tmpDir, projectId, "src");
     await mkdir(srcDir, { recursive: true });
-    const rootYaml = yaml.dump({
+    const rootYaml = dumpYaml({
       name: "test-model",
       description: "A test model",
       relationships: [],
@@ -85,7 +85,7 @@ describe("SemanticModelFileService.updateModelExtensions", () => {
     expect(ok).toBe(true);
 
     const raw = await readFile(join(tmpDir, projectId, "src", "test-model.yaml"), "utf-8");
-    const parsed = yaml.load(raw) as Record<string, unknown>;
+    const parsed = loadYaml(raw) as Record<string, unknown>;
     expect(parsed.custom_extensions).toEqual(extensions);
     expect(parsed.name).toBe("test-model");
     expect(parsed.description).toBe("A test model");
@@ -96,7 +96,7 @@ describe("SemanticModelFileService.updateModelExtensions", () => {
     expect(ok).toBe(true);
 
     const raw = await readFile(join(tmpDir, projectId, "src", "test-model.yaml"), "utf-8");
-    const parsed = yaml.load(raw) as Record<string, unknown>;
+    const parsed = loadYaml(raw) as Record<string, unknown>;
     expect(parsed.custom_extensions).toBeUndefined();
   });
 
@@ -110,7 +110,7 @@ describe("SemanticModelFileService.updateModelExtensions", () => {
     await svc.updateModelExtensions(projectId, "test-model", extensions);
 
     const raw = await readFile(join(tmpDir, projectId, "src", "test-model.yaml"), "utf-8");
-    const parsed = yaml.load(raw) as Record<string, unknown>;
+    const parsed = loadYaml(raw) as Record<string, unknown>;
     expect(parsed.name).toBe("test-model");
     expect(parsed.description).toBe("A test model");
     expect(parsed.relationships).toEqual([]);
@@ -124,7 +124,7 @@ describe("SemanticModelFileService.updateModelExtensions", () => {
     );
 
     const raw = await readFile(join(tmpDir, projectId, "src", "test-model.yaml"), "utf-8");
-    const parsed = yaml.load(raw) as Record<string, unknown>;
+    const parsed = loadYaml(raw) as Record<string, unknown>;
     expect(parsed.custom_extensions).toBeUndefined();
   });
 });
@@ -177,7 +177,7 @@ describe("SemanticModelFileService conflict detection", () => {
     await mkdir(srcDir, { recursive: true });
     await writeFile(
       join(srcDir, "good.yaml"),
-      yaml.dump({ name: "good", description: "", relationships: [], metrics: [], datasets: [] }),
+      dumpYaml({ name: "good", description: "", relationships: [], metrics: [], datasets: [] }),
       "utf-8",
     );
     await writeFile(
@@ -198,10 +198,10 @@ describe("SemanticModelFileService conflict detection", () => {
   it("list() skips dotfiles", async () => {
     const srcDir = join(tmpDir, projectId, "src");
     await mkdir(srcDir, { recursive: true });
-    await writeFile(join(srcDir, ".hidden.yaml"), yaml.dump({ name: "hidden" }), "utf-8");
+    await writeFile(join(srcDir, ".hidden.yaml"), dumpYaml({ name: "hidden" }), "utf-8");
     await writeFile(
       join(srcDir, "visible.yaml"),
-      yaml.dump({ name: "visible", description: "", relationships: [], metrics: [], datasets: [] }),
+      dumpYaml({ name: "visible", description: "", relationships: [], metrics: [], datasets: [] }),
       "utf-8",
     );
 
@@ -220,7 +220,7 @@ describe("SemanticModelFileService.updateDatasetExtensions", () => {
     svc = new SemanticModelFileService(tmpDir);
     const dsDir = join(tmpDir, projectId, "src", "test-model");
     await mkdir(dsDir, { recursive: true });
-    const dsYaml = yaml.dump({
+    const dsYaml = dumpYaml({
       dataset: {
         name: "orders",
         source: "shop.public.orders",
@@ -241,7 +241,7 @@ describe("SemanticModelFileService.updateDatasetExtensions", () => {
     ).rejects.toThrow(/Invalid JSON.*vendor "COMMON"/);
 
     const raw = await readFile(join(tmpDir, projectId, "src", "test-model", "orders.yaml"), "utf-8");
-    const parsed = yaml.load(raw) as Record<string, unknown>;
+    const parsed = loadYaml(raw) as Record<string, unknown>;
     const ds = parsed.dataset as Record<string, unknown>;
     expect(ds.custom_extensions).toBeUndefined();
   });
@@ -252,7 +252,7 @@ describe("SemanticModelFileService.updateDatasetExtensions", () => {
     expect(ok).toBe(true);
 
     const raw = await readFile(join(tmpDir, projectId, "src", "test-model", "orders.yaml"), "utf-8");
-    const parsed = yaml.load(raw) as Record<string, unknown>;
+    const parsed = loadYaml(raw) as Record<string, unknown>;
     const ds = parsed.dataset as Record<string, unknown>;
     expect(ds.custom_extensions).toEqual(extensions);
   });
@@ -269,7 +269,7 @@ describe("SemanticModelFileService.updateDatasetMetadata", () => {
     svc = new SemanticModelFileService(tmpDir);
     const dsDir = join(tmpDir, projectId, "src", "test-model");
     await mkdir(dsDir, { recursive: true });
-    const dsYaml = yaml.dump({
+    const dsYaml = dumpYaml({
       dataset: {
         name: "orders",
         source: "shop.public.orders",
@@ -305,7 +305,7 @@ describe("SemanticModelFileService.updateDatasetMetadata", () => {
     });
     expect(ok).toBe(true);
 
-    const parsed = yaml.load(await readFile(dsPath(), "utf-8")) as { dataset: Record<string, unknown> };
+    const parsed = loadYaml(await readFile(dsPath(), "utf-8")) as { dataset: Record<string, unknown> };
     const ds = parsed.dataset;
     expect(ds.description).toBe("Order line items");
     expect(ds.ai_context).toEqual({ instructions: "Use for revenue analysis" });
@@ -324,7 +324,7 @@ describe("SemanticModelFileService.updateDatasetMetadata", () => {
     });
     expect(ok).toBe(true);
 
-    const parsed = yaml.load(await readFile(dsPath(), "utf-8")) as { dataset: Record<string, unknown> };
+    const parsed = loadYaml(await readFile(dsPath(), "utf-8")) as { dataset: Record<string, unknown> };
     const fields = parsed.dataset.fields as Record<string, unknown>[];
     expect(fields[0].description).toBe("Line total in USD");
     expect(fields[0].custom_extensions).toEqual([{ vendor_name: "COMMON", data: '{"data_type":"DECIMAL"}' }]);
@@ -347,7 +347,7 @@ describe("SemanticModelFileService.updateDatasetMetadata", () => {
     });
     await svc.updateDatasetMetadata(projectId, "test-model", "orders", { ai_context: "" });
 
-    const parsed = yaml.load(await readFile(dsPath(), "utf-8")) as { dataset: Record<string, unknown> };
+    const parsed = loadYaml(await readFile(dsPath(), "utf-8")) as { dataset: Record<string, unknown> };
     expect(parsed.dataset.ai_context).toBeUndefined();
   });
 

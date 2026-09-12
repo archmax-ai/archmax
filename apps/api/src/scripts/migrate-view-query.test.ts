@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, mkdir, rm, readFile, writeFile, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import yaml from "js-yaml";
+import { load as loadYaml, dump as dumpYaml } from "js-yaml";
 import { buildLegacyViewQuery, runMigration, processDatasetFile } from "./migrate-view-query";
 
 interface DatasetYaml {
@@ -23,7 +23,7 @@ function makeField(name: string, expression: string = name) {
 }
 
 function makeDatasetYaml(ds: DatasetYaml): string {
-  return yaml.dump({ dataset: ds }, { lineWidth: 120, noRefs: true });
+  return dumpYaml({ dataset: ds }, { lineWidth: 120, noRefs: true });
 }
 
 async function fileExists(path: string): Promise<boolean> {
@@ -151,7 +151,7 @@ describe("runMigration", () => {
     });
     expect(await fileExists(`${file}.bak`)).toBe(true);
 
-    const updated = yaml.load(await readFile(file, "utf-8")) as { dataset: DatasetYaml };
+    const updated = loadYaml(await readFile(file, "utf-8")) as { dataset: DatasetYaml };
     const viewQuery = readViewQuery(updated.dataset.custom_extensions);
     expect(viewQuery).toBe(`SELECT\n  "id",\n  "total_amount",\n  "status"\nFROM shop.public.orders`);
   });
@@ -167,7 +167,7 @@ describe("runMigration", () => {
     });
     await runMigration({ baseDir, log: captureLog });
 
-    const updated = yaml.load(await readFile(join(baseDir, "p1", "src", "hr", "stammdaten.yaml"), "utf-8")) as { dataset: DatasetYaml };
+    const updated = loadYaml(await readFile(join(baseDir, "p1", "src", "hr", "stammdaten.yaml"), "utf-8")) as { dataset: DatasetYaml };
     const viewQuery = readViewQuery(updated.dataset.custom_extensions);
     expect(viewQuery).toContain('"personid" AS "person_id"');
   });
@@ -182,7 +182,7 @@ describe("runMigration", () => {
     });
     await runMigration({ baseDir, log: captureLog });
 
-    const updated = yaml.load(await readFile(join(baseDir, "p1", "src", "shop", "people.yaml"), "utf-8")) as { dataset: DatasetYaml };
+    const updated = loadYaml(await readFile(join(baseDir, "p1", "src", "shop", "people.yaml"), "utf-8")) as { dataset: DatasetYaml };
     const viewQuery = readViewQuery(updated.dataset.custom_extensions);
     expect(viewQuery).toContain(`c_first_name || ' ' || c_last_name AS "full_name"`);
   });
@@ -220,7 +220,7 @@ describe("runMigration", () => {
     expect(counts.skippedExistingBackup).toBe(1);
     expect(counts.migrated).toBe(0);
     // The original file must not have been modified.
-    const updated = yaml.load(await readFile(file, "utf-8")) as { dataset: DatasetYaml };
+    const updated = loadYaml(await readFile(file, "utf-8")) as { dataset: DatasetYaml };
     expect(readViewQuery(updated.dataset.custom_extensions)).toBeNull();
     expect(await readFile(`${file}.bak`, "utf-8")).toBe("manual-backup-content");
     expect(logEntries.some((e) => e.level === "WARN" && /existing backup/i.test(e.message))).toBe(true);

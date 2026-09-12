@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import yaml from "js-yaml";
+import { dump as dumpYaml } from "js-yaml";
 
 const dialectEnum = z.enum(["ANSI_SQL", "SNOWFLAKE", "MDX", "TABLEAU", "DATABRICKS"]);
 
@@ -78,7 +78,7 @@ export const dimensionSchema = z.object({
  * instead of the intended plain string. We recover by re-serialising to YAML.
  */
 const yamlCoercedString = z.preprocess(
-  (v) => (typeof v === "object" && v !== null && !Array.isArray(v) ? yaml.dump(v).trim() : v),
+  (v) => (typeof v === "object" && v !== null && !Array.isArray(v) ? dumpYaml(v).trim() : v),
   z.string(),
 );
 

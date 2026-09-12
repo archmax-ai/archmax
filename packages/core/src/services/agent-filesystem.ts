@@ -1,7 +1,7 @@
 import { resolve, relative, isAbsolute } from "node:path";
 import { cp, rename as fsRename, rm, lstat, access } from "node:fs/promises";
 import { FilesystemBackend } from "deepagents";
-import yaml from "js-yaml";
+import { load as loadYaml, YAMLException } from "js-yaml";
 
 const YAML_EXT = /\.ya?ml$/i;
 
@@ -136,9 +136,9 @@ export class ValidatingFilesystemBackend extends FilesystemBackend {
     return this.runExclusive(async () => {
       if (YAML_EXT.test(filePath)) {
         try {
-          yaml.load(content);
+          loadYaml(content);
         } catch (err) {
-          const msg = err instanceof yaml.YAMLException ? err.message : String(err);
+          const msg = err instanceof YAMLException ? err.message : String(err);
           return { error: `YAML syntax error: ${msg}` };
         }
       }
@@ -167,9 +167,9 @@ export class ValidatingFilesystemBackend extends FilesystemBackend {
           : typeof content === "string"
             ? content
             : new TextDecoder().decode(content);
-        yaml.load(text);
+        loadYaml(text);
       } catch (err) {
-        const msg = err instanceof yaml.YAMLException ? err.message : String(err);
+        const msg = err instanceof YAMLException ? err.message : String(err);
         return { ...result, error: `YAML syntax error after edit: ${msg}` };
       }
       return result;

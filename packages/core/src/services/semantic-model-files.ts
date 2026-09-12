@@ -1,7 +1,7 @@
 import { readdir, readFile, writeFile, rename, unlink, mkdir, rm, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
-import yaml from "js-yaml";
+import { load as loadYaml, dump as dumpYaml } from "js-yaml";
 import {
   semanticModelSchema,
   semanticModelRootSchema,
@@ -254,7 +254,7 @@ export class SemanticModelFileService {
       };
     }
 
-    const parsed = yaml.load(rawRoot);
+    const parsed = loadYaml(rawRoot);
     const dsDir = join(dir, name);
 
     if (await this.dirExists(dsDir)) {
@@ -274,7 +274,7 @@ export class SemanticModelFileService {
     const filePath = join(dir, modelName, `${datasetName}.yaml`);
     try {
       const raw = await readFile(filePath, "utf-8");
-      const parsed = yaml.load(raw);
+      const parsed = loadYaml(raw);
       return decorateDataset(datasetFileSchema.parse(parsed).dataset);
     } catch {
       return null;
@@ -300,7 +300,7 @@ export class SemanticModelFileService {
 
     await this.atomicWrite(
       this.modelPath(projectId, model.name),
-      yaml.dump(stripEmptyExtensions(rootData), YAML_OPTS),
+      dumpYaml(stripEmptyExtensions(rootData), YAML_OPTS),
     );
 
     const dsDir = this.datasetDir(projectId, model.name);
@@ -312,7 +312,7 @@ export class SemanticModelFileService {
       const reconciled = reconcileDatasetForWrite(dataset);
       await this.atomicWrite(
         this.datasetPath(projectId, model.name, dataset.name),
-        yaml.dump({ dataset: stripEmptyExtensions(reconciled) }, YAML_OPTS),
+        dumpYaml({ dataset: stripEmptyExtensions(reconciled) }, YAML_OPTS),
       );
     }
 
@@ -356,7 +356,7 @@ export class SemanticModelFileService {
     for (const file of entries) {
       try {
         const raw = await readFile(join(dsDir, file), "utf-8");
-        const parsed = yaml.load(raw);
+        const parsed = loadYaml(raw);
         datasets.push(decorateDataset(datasetFileSchema.parse(parsed).dataset));
       } catch {
         // skip invalid dataset files
@@ -368,7 +368,7 @@ export class SemanticModelFileService {
   async getRawYaml(projectId: string, name: string): Promise<string | null> {
     const model = await this.get(projectId, name);
     if (!model) return null;
-    return yaml.dump(stripEmptyExtensions({ ...model } as Record<string, unknown>), YAML_OPTS);
+    return dumpYaml(stripEmptyExtensions({ ...model } as Record<string, unknown>), YAML_OPTS);
   }
 
   async updateModelExtensions(
@@ -387,10 +387,10 @@ export class SemanticModelFileService {
       return false;
     }
 
-    const root = yaml.load(rawContent) as Record<string, unknown>;
+    const root = loadYaml(rawContent) as Record<string, unknown>;
     root.custom_extensions = extensions.length > 0 ? extensions : undefined;
     if (!root.custom_extensions) delete root.custom_extensions;
-    await this.atomicWrite(filePath, yaml.dump(root, YAML_OPTS));
+    await this.atomicWrite(filePath, dumpYaml(root, YAML_OPTS));
     return true;
   }
 
@@ -412,11 +412,11 @@ export class SemanticModelFileService {
       return false;
     }
 
-    const wrapper = yaml.load(rawContent) as Record<string, unknown>;
+    const wrapper = loadYaml(rawContent) as Record<string, unknown>;
     const ds = (wrapper.dataset ?? wrapper) as Record<string, unknown>;
     ds.custom_extensions = extensions.length > 0 ? extensions : undefined;
     if (!ds.custom_extensions) delete ds.custom_extensions;
-    await this.atomicWrite(filePath, yaml.dump({ dataset: ds }, YAML_OPTS));
+    await this.atomicWrite(filePath, dumpYaml({ dataset: ds }, YAML_OPTS));
     return true;
   }
 
@@ -445,7 +445,7 @@ export class SemanticModelFileService {
       return false;
     }
 
-    const wrapper = yaml.load(rawContent) as Record<string, unknown>;
+    const wrapper = loadYaml(rawContent) as Record<string, unknown>;
     const ds = (wrapper.dataset ?? wrapper) as Record<string, unknown>;
 
     if (metadata.description !== undefined) {
@@ -472,7 +472,7 @@ export class SemanticModelFileService {
       }
     }
 
-    await this.atomicWrite(filePath, yaml.dump({ dataset: ds }, YAML_OPTS));
+    await this.atomicWrite(filePath, dumpYaml({ dataset: ds }, YAML_OPTS));
     return true;
   }
 
