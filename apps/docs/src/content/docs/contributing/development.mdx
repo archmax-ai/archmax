@@ -46,7 +46,7 @@ import { Steps } from "@astrojs/starlight/components";
    This starts all workspaces via Turborepo:
    - **API**: `http://localhost:3000`
    - **Frontend**: `http://localhost:5173`
-   - The API trusts only `http://localhost:5173` as a browser origin, so the dev server runs with `strictPort` and fails if 5173 is taken instead of moving to a port the API rejects with `Invalid origin`. To use another port, set `CORS_ORIGINS=http://localhost:<port>` in `.env.local` and start the frontend with `pnpm --filter @archmax/frontend dev -- --port <port>`.
+   - If 5173 is taken (another project's dev server, say), set `FRONTEND_PORT=<port>` in the repo-root `.env.local`. Vite listens there and the API trusts `http://localhost:<port>` as a browser origin; without it, Vite fails fast on a busy port rather than moving to one the API would reject with `Invalid origin`.
    - **Docs**: `http://localhost:4321`
 
 </Steps>

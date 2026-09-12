@@ -13,6 +13,8 @@ const envSchema = z.object({
 
   CORS_ORIGINS: z.string().optional(),
 
+  FRONTEND_PORT: z.string().optional(),
+
   SEMANTICS_DATA_DIR: z.string().optional().default("data"),
 
   MCP_RATE_LIMIT_MAX: z.string().optional().default("120"),
@@ -109,15 +111,18 @@ function sleepForever(): Promise<never> {
 
 function buildParsedEnv(raw: RawEnv): ParsedEnv {
   const corsValue =
-    raw.CORS_ORIGINS || raw.APP_BASE_URL || "http://localhost:5173";
+    raw.CORS_ORIGINS || raw.APP_BASE_URL || `http://localhost:${raw.FRONTEND_PORT || "5173"}`;
 
   return {
     ...raw,
     AUTH_BASE_URL: raw.AUTH_BASE_URL || raw.APP_BASE_URL,
-    corsOrigins: corsValue
-      .split(",")
-      .map((o) => o.trim())
-      .filter(Boolean),
+    corsOrigins: [
+      ...new Set([
+        ...corsValue.split(",").map((o) => o.trim()).filter(Boolean),
+        // The Vite dev server reads the same variable, so its origin is always trusted.
+        ...(raw.FRONTEND_PORT ? [`http://localhost:${raw.FRONTEND_PORT}`] : []),
+      ]),
+    ],
     projectsDir: join(raw.SEMANTICS_DATA_DIR, "projects"),
   };
 }

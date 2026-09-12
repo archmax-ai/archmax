@@ -74,6 +74,25 @@ describe("env — APP_BASE_URL derivation", () => {
     expect(env.corsOrigins).toEqual(["http://localhost:5173"]);
   });
 
+  it("uses FRONTEND_PORT for the default dev origin", async () => {
+    delete process.env.APP_BASE_URL;
+    delete process.env.AUTH_BASE_URL;
+    delete process.env.CORS_ORIGINS;
+    process.env.FRONTEND_PORT = "5175";
+
+    const getEnv = await loadGetEnv();
+    expect(getEnv().corsOrigins).toEqual(["http://localhost:5175"]);
+  });
+
+  it("adds the FRONTEND_PORT origin alongside explicit CORS_ORIGINS", async () => {
+    process.env.APP_BASE_URL = "http://localhost:5173";
+    process.env.CORS_ORIGINS = "http://localhost:5173";
+    process.env.FRONTEND_PORT = "5175";
+
+    const getEnv = await loadGetEnv();
+    expect(getEnv().corsOrigins).toEqual(["http://localhost:5173", "http://localhost:5175"]);
+  });
+
   it("warns on stderr in production when APP_BASE_URL is not set", async () => {
     process.env.NODE_ENV = "production";
     delete process.env.APP_BASE_URL;
