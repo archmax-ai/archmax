@@ -110,7 +110,8 @@ services:
   # ── Iceberg (Lakekeeper + MinIO) ──────────────────────────────────
 
   minio:
-    image: minio/minio:latest
+    # MinIO no longer publishes to Docker Hub (pulls of minio/minio are denied); quay.io is the supported registry.
+    image: quay.io/minio/minio:latest
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
