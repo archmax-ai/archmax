@@ -10,8 +10,11 @@
   },
   "dependencies": {
     "@astrojs/starlight": "^0.42.0",
-    "astro": "^6.4.8",
+    "astro": "^7.3.2",
     "sharp": "^0.35.4",
     "starlight-image-zoom": "^0.16.0"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.3.2"
   }
 }
