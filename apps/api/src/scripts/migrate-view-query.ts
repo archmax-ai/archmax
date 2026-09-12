@@ -35,7 +35,7 @@
 import { readdir, readFile, writeFile, rename, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
-import yaml from "js-yaml";
+import { load as loadYaml, dump as dumpYaml } from "js-yaml";
 import { datasetFileSchema, type Dataset } from "@archmax/core/services/semantic-model-schema";
 
 interface MigrationCounts {
@@ -185,7 +185,7 @@ export async function processDatasetFile(
   log: (level: "INFO" | "WARN" | "ERROR", message: string) => void,
 ): Promise<"migrated" | "skipped-already" | "skipped-backup" | "errored"> {
   const raw = await readFile(datasetFilePath, "utf-8");
-  const wrapper = yaml.load(raw) as Record<string, unknown>;
+  const wrapper = loadYaml(raw) as Record<string, unknown>;
   const ds = (wrapper?.dataset ?? wrapper) as Record<string, unknown> | undefined;
   if (!ds || typeof ds !== "object") {
     log("WARN", `Skipping ${datasetFilePath}: not a dataset YAML`);
@@ -239,7 +239,7 @@ export async function processDatasetFile(
   await atomicWrite(backupPath, raw);
   // 2. Then write the updated YAML. We mirror the file service's YAML_OPTS
   //    so format diffs stay minimal.
-  const updated = yaml.dump(wrapper.dataset ? { dataset: ds } : ds, { lineWidth: 120, noRefs: true });
+  const updated = dumpYaml(wrapper.dataset ? { dataset: ds } : ds, { lineWidth: 120, noRefs: true });
   await atomicWrite(datasetFilePath, updated);
 
   log("INFO", `Migrated ${ident}`);

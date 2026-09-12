@@ -1,7 +1,7 @@
 import { readdir, readFile, writeFile, rename, unlink, mkdir, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
-import yaml from "js-yaml";
+import { dump as dumpYaml } from "js-yaml";
 import { SemanticModelFileService } from "./semantic-model-files";
 import type { SemanticModel } from "./semantic-model-schema";
 
@@ -106,7 +106,7 @@ export class PublishService {
 
   private async writeAssembledModel(outDir: string, model: SemanticModel): Promise<void> {
     const assembled = stripEmptyExtensions({ ...model } as Record<string, unknown>);
-    const content = yaml.dump(assembled, YAML_OPTS);
+    const content = dumpYaml(assembled, YAML_OPTS);
     const targetPath = join(outDir, `${model.name}.yaml`);
     const tmpPath = join(outDir, `.${randomUUID()}.tmp`);
     await writeFile(tmpPath, content, "utf-8");
