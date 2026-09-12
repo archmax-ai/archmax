@@ -15,7 +15,7 @@ const {
   const mockEnv: Record<string, string | undefined> = {
     ENCRYPTION_KEY: "test-encryption-key-32-chars-ok!",
     TEST_AGENT_MAX_ITERATIONS: "100",
-    ARCHMAX_DATA_DIR: "/tmp/test",
+    SEMANTICS_DATA_DIR: "/tmp/test",
     projectsDir: "/tmp/test/projects",
   };
   return {

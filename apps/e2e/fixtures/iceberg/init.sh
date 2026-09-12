@@ -7,7 +7,7 @@ MINIO_USER="${MINIO_ROOT_USER:-minioadmin}"
 MINIO_PASS="${MINIO_ROOT_PASSWORD:-minioadmin}"
 
 echo "==> Installing dependencies..."
-apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates unzip > /dev/null
+apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates unzip awscli > /dev/null
 
 echo "==> Waiting for Lakekeeper to be ready..."
 for i in $(seq 1 30); do
@@ -26,13 +26,17 @@ HTTP_CODE=$(curl -s -o /tmp/bootstrap-response.txt -w "%{http_code}" \
   -d '{"accept-terms-of-use": true}')
 echo "    Bootstrap response: $HTTP_CODE"
 
-echo "==> Installing MinIO client..."
-curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc
-chmod +x /usr/local/bin/mc
-
 echo "==> Creating MinIO bucket 'warehouse'..."
-mc alias set local "${MINIO_URL}" "${MINIO_USER}" "${MINIO_PASS}"
-mc mb --ignore-existing local/warehouse
+# MinIO no longer publishes standalone `mc` binaries (dl.min.io returns 410), so use the
+# Debian-packaged AWS CLI against MinIO's S3 API. Package installs are also arch-native,
+# unlike the previous hard-coded linux-amd64 download.
+export AWS_ACCESS_KEY_ID="${MINIO_USER}" AWS_SECRET_ACCESS_KEY="${MINIO_PASS}"
+export AWS_DEFAULT_REGION=us-east-1 AWS_EC2_METADATA_DISABLED=true
+if aws --endpoint-url "${MINIO_URL}" s3api head-bucket --bucket warehouse > /dev/null 2>&1; then
+  echo "    Bucket already exists, continuing."
+else
+  aws --endpoint-url "${MINIO_URL}" s3 mb s3://warehouse
+fi
 
 echo "==> Creating Lakekeeper warehouse 'e2e_warehouse'..."
 HTTP_CODE=$(curl -s -o /tmp/lk-response.txt -w "%{http_code}" \

@@ -5,28 +5,7 @@ import { getRedis, isTestRunCancelFlagSet, clearTestRunCancelFlag } from "@archm
 import { TestRun } from "@archmax/core/models/index";
 import { TEST_RUN_CANCEL_CHANNEL_PREFIX } from "@archmax/core/queue/constants";
 import type { TestRunJobData, TestRunJobResult } from "@archmax/core/queue/types";
-import { processTestCase } from "@archmax/core/services/test-runner";
-
-/**
- * Re-check whether every case of a run has reached a terminal state and, if so,
- * flip the run to `completed`. Mirrors the `finally` block in
- * `processTestRunJob` so both the happy path and the stalled-recovery path
- * converge on the same finalisation.
- */
-async function maybeCompleteRun(testRunId: string): Promise<void> {
-  const run = await TestRun.findById(testRunId).lean();
-  if (run && run.status !== "cancelled") {
-    const allDone = run.cases.every(
-      (c) => c.status !== "pending" && c.status !== "running",
-    );
-    if (allDone) {
-      await TestRun.updateOne(
-        { _id: testRunId },
-        { status: "completed", completedAt: new Date() },
-      );
-    }
-  }
-}
+import { finalizeTestRun, processTestCase } from "@archmax/core/services/test-runner";
 
 /**
  * Finalize a single test case whose worker process was killed mid-run.
@@ -57,7 +36,7 @@ export async function finalizeStalledTestCase(
       },
     );
   }
-  await maybeCompleteRun(testRunId);
+  await finalizeTestRun(testRunId);
 }
 
 export async function processTestRunJob(
@@ -115,7 +94,7 @@ export async function processTestRunJob(
 
     try {
       await connectDB();
-      await maybeCompleteRun(testRunId);
+      await finalizeTestRun(testRunId);
     } catch (finalizeErr) {
       console.error(`[test-processor] Failed to finalize run ${testRunId}:`, finalizeErr);
     }

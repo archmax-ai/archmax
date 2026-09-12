@@ -21,6 +21,26 @@ export function clearTestRunCancelledFlag(testRunId: string): void {
   cancelledTestRuns.delete(testRunId);
 }
 
+/**
+ * Flip a run to its terminal status once every case has settled. Shared by the
+ * Redis worker (per-case, re-checked each time a case finishes) and the
+ * in-process fallback (called once after the sequential loop) so both converge
+ * on the same rule: a run with any errored or still-pending case becomes
+ * `failed`, otherwise `completed`. A run already `cancelled` and a run whose
+ * cases are still in flight are left untouched.
+ */
+export async function finalizeTestRun(testRunId: string): Promise<void> {
+  const run = await TestRun.findById(testRunId).lean();
+  if (!run || run.status === "cancelled") return;
+  const allDone = run.cases.every((c) => c.status !== "pending" && c.status !== "running");
+  if (!allDone) return;
+  const hasFailures = run.cases.some((c) => c.status === "error" || c.status === "pending");
+  await TestRun.updateOne(
+    { _id: testRunId },
+    { status: hasFailures ? "failed" : "completed", completedAt: new Date() },
+  );
+}
+
 export function truncate(s: string, max: number): string {
   return s.length > max ? s.slice(0, max) + "…" : s;
 }

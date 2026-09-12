@@ -106,14 +106,14 @@ describe("GitService", () => {
       expect(commits[0].commit.message.trim()).toBe("add hello");
     });
 
-    it("always uses the fixed archmax author", async () => {
+    it("always uses the fixed archmax semantics author", async () => {
       await svc.ensureRepo();
       await writeFile(join(tmpDir, "f.txt"), "data", "utf-8");
       await svc.commit("test");
 
       const [latest] = await git.log({ fs, dir: tmpDir, depth: 1 });
-      expect(latest.commit.author.name).toBe("archmax");
-      expect(latest.commit.author.email).toBe("archmax@localhost");
+      expect(latest.commit.author.name).toBe("archmax semantics");
+      expect(latest.commit.author.email).toBe("semantics@localhost");
     });
   });
 
@@ -135,7 +135,7 @@ describe("GitService", () => {
       expect(result.entries.length).toBeGreaterThanOrEqual(2);
       expect(result.entries[0].message.trim()).toBe("second");
       expect(result.entries[1].message.trim()).toBe("first");
-      expect(result.entries[0].author.name).toBe("archmax");
+      expect(result.entries[0].author.name).toBe("archmax semantics");
       expect(result.entries[0].timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
       expect(result.total).toBeGreaterThanOrEqual(3);
     });

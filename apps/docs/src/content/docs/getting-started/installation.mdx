@@ -1,17 +1,17 @@
 ---
 title: Installation
-description: How to install and run archmax using Docker or local development.
+description: How to install and run archmax semantics using Docker or local development.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
 
 ## Docker Compose (Recommended)
 
-The fastest way to run archmax is with Docker Compose. This starts archmax with dedicated MongoDB and Redis services, which is the recommended setup for production use:
+The fastest way to run archmax semantics is with Docker Compose. This starts archmax semantics with dedicated MongoDB and Redis services, which is the recommended setup for production use:
 
 ```bash
-git clone https://github.com/archmaxai/archmax.git
-cd archmax
+git clone https://github.com/archmax-ai/semantics.git
+cd semantics
 cp .env.example .env
 ```
 
@@ -45,7 +45,7 @@ If you're deploying behind a reverse proxy or on a cloud host with a custom doma
 </Aside>
 
 <Aside type="tip">
-The Compose stack runs MongoDB and Redis as separate containers alongside archmax. Two Docker volumes persist data across restarts:
+The Compose stack runs MongoDB and Redis as separate containers alongside archmax semantics. Two Docker volumes persist data across restarts:
 
 | Volume | Container Path | Contents |
 |--------|---------------|----------|
@@ -57,24 +57,24 @@ These volumes are created automatically. Without them, all project and database 
 
 ## Standalone Docker
 
-Run archmax as a single container with no external dependencies. MongoDB and Redis are embedded in the image and start automatically:
+Run archmax semantics as a single container with no external dependencies. MongoDB and Redis are embedded in the image and start automatically:
 
 ```bash
 docker run -d \
-  --name archmax \
+  --name semantics \
   -p 8080:8080 \
   -e BETTER_AUTH_SECRET=$(openssl rand -base64 32) \
   -e UI_USERNAME=admin \
   -e UI_PASSWORD=changeme \
   -e AGENT_API_KEY=your-api-key \
   -v ~/.archmax:/data \
-  ghcr.io/archmaxai/archmax:latest
+  ghcr.io/archmax-ai/semantics:latest
 ```
 
 Open `http://localhost:8080` and log in with username `admin` and the password you set.
 
 <Aside type="caution">
-Save your `BETTER_AUTH_SECRET` value before running this command. The subshell `$(openssl rand ...)` generates a random secret that is not displayed. Either generate it beforehand and paste the value, or retrieve it after starting with `docker inspect archmax --format '{{range .Config.Env}}{{println .}}{{end}}' | grep BETTER_AUTH_SECRET`.
+Save your `BETTER_AUTH_SECRET` value before running this command. The subshell `$(openssl rand ...)` generates a random secret that is not displayed. Either generate it beforehand and paste the value, or retrieve it after starting with `docker inspect semantics --format '{{range .Config.Env}}{{println .}}{{end}}' | grep BETTER_AUTH_SECRET`.
 </Aside>
 
 <Aside type="note">

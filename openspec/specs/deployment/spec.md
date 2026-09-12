@@ -275,6 +275,8 @@ The `docker-compose.yml` SHALL include a comment on the `AGENT_API_KEY` line ind
 
 The `/api/config` endpoint SHALL include an `agentConfigured` boolean field that indicates whether the agent API key is set. The endpoint MUST NOT expose the actual key value or any secret material. The field SHALL be `true` when `AGENT_API_KEY` is a non-empty string, and `false` otherwise.
 
+The endpoint SHALL NOT report a Firebird capability flag; `firebirdEnabled` is no longer part of the response.
+
 #### Scenario: Agent is configured
 
 - **WHEN** `AGENT_API_KEY` is set to a non-empty value
@@ -287,6 +289,11 @@ The `/api/config` endpoint SHALL include an `agentConfigured` boolean field that
 - **AND** a client requests `GET /api/config`
 - **THEN** the response includes `"agentConfigured": false`
 - **AND** no secret values are leaked in the response
+
+#### Scenario: No Firebird capability flag
+
+- **WHEN** a client requests `GET /api/config`
+- **THEN** the response does not include a `firebirdEnabled` field
 
 ### Requirement: Entrypoint Environment Pre-flight Check
 
@@ -402,4 +409,3 @@ The version MUST NOT be exposed on unauthenticated endpoints (`/api/health`, `/a
 
 - **WHEN** an authenticated user requests `GET /api/version` on a local dev server without `APP_VERSION` set
 - **THEN** the response JSON is `{ "version": "dev" }`
-

@@ -3,7 +3,7 @@ title: MCP Integration
 description: Connect AI agents to your semantic layer using the Model Context Protocol.
 ---
 
-archmax exposes your semantic models to AI agents through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/). Agents discover available models, browse datasets and fields, and run scoped SQL queries.
+archmax semantics exposes your semantic models to AI agents through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/). Agents discover available models, browse datasets and fields, and run scoped SQL queries.
 
 While semantic models are stored internally as [OSI](https://github.com/open-semantic-interchange/OSI) YAML files, the MCP tools never return raw YAML. Instead, models are converted on-the-fly into a **compressed markdown digest** that uses **3–5× fewer tokens** than the equivalent YAML while preserving all semantically relevant context. See [Semantic Models — How Agents See Your Models](/guides/semantic-models/#how-agents-see-your-models) for details on the digest format.
 
@@ -95,7 +95,7 @@ Add to your Claude Desktop MCP config:
 ```json
 {
   "mcpServers": {
-    "archmax": {
+    "archmax-semantics": {
       "url": "https://your-server/mcp/your-project/mcp",
       "headers": {
         "Authorization": "Bearer sk-your-token"
@@ -112,7 +112,7 @@ Add to your `.cursor/mcp.json`:
 ```json
 {
   "mcpServers": {
-    "archmax": {
+    "archmax-semantics": {
       "url": "https://your-server/mcp/your-project/mcp",
       "headers": {
         "Authorization": "Bearer sk-your-token"

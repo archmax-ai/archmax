@@ -57,7 +57,7 @@ export function UserMenu({ collapsed = false }: { collapsed?: boolean }) {
             <DropdownMenuSubContent>
               <DropdownMenuRadioGroup
                 value={theme}
-                onValueChange={(v) => setTheme(v as Theme)}
+                onValueChange={(v: string) => setTheme(v as Theme)}
               >
                 <DropdownMenuRadioItem value="light">
                   <Sun className="mr-2 h-4 w-4" />

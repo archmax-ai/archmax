@@ -102,12 +102,15 @@ describe("seedAdmin", () => {
 
     await seedAdmin(ctx as never);
 
-    expect(spies.findUserByEmail).toHaveBeenCalledWith(ADMIN_EMAIL);
-    expect(spies.createUser).toHaveBeenCalledWith({
-      name: "admin",
-      email: ADMIN_EMAIL,
-      username: "admin",
-    });
+    expect(spies.findUserByEmail).toHaveBeenCalledWith(ADMIN_EMAIL, { includeAccounts: false });
+    expect(spies.createUser).toHaveBeenCalledWith(
+      {
+        name: "admin",
+        email: ADMIN_EMAIL,
+        username: "admin",
+      },
+      { method: "email-password" },
+    );
     expect(spies.hash).toHaveBeenCalledWith("current-password");
     expect(spies.createAccount).toHaveBeenCalledWith({
       userId: USER_ID,

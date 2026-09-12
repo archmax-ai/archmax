@@ -1,11 +1,11 @@
 ---
 title: Migrations
-description: One-time data migrations the operator runs against ARCHMAX_DATA_DIR.
+description: One-time data migrations the operator runs against SEMANTICS_DATA_DIR.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
 
-archmax ships migrations for one-time, on-disk data shape changes that
+archmax semantics ships migrations for one-time, on-disk data shape changes that
 cannot be performed automatically at runtime. Each migration is idempotent
 and writes a `.yaml.bak` of every file it changes, so you can roll back by
 restoring the backup.
@@ -13,11 +13,11 @@ restoring the backup.
 ## `migrate:view-query`
 
 Backfills the `view_query` extension on every dataset YAML in
-`<ARCHMAX_DATA_DIR>/projects/<projectId>/src/<modelName>/<datasetName>.yaml`.
+`<SEMANTICS_DATA_DIR>/projects/<projectId>/src/<modelName>/<datasetName>.yaml`.
 
 ### Why
 
-Older versions of archmax auto-derived the per-model scoped DuckDB VIEW body
+Older versions of archmax semantics auto-derived the per-model scoped DuckDB VIEW body
 from each dataset's `fields` array. The current contract is that the
 dataset's `view_query` (a string inside its COMMON custom extension) IS the
 view body — the platform never auto-derives. This migration writes the
@@ -36,7 +36,7 @@ will report every dataset as `skipped (already migrated)`.
 pnpm --filter @archmax/api migrate:view-query
 ```
 
-The script honours `ARCHMAX_DATA_DIR` and defaults to `./data` when unset.
+The script honours `SEMANTICS_DATA_DIR` (and the deprecated `ARCHMAX_DATA_DIR` alias) and defaults to `./data` when neither is set.
 
 ### What it does
 

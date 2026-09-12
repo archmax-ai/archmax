@@ -1,6 +1,6 @@
 ---
 title: Development Setup
-description: Set up a local development environment for contributing to archmax.
+description: Set up a local development environment for contributing to archmax semantics.
 ---
 
 import { Steps } from "@astrojs/starlight/components";
@@ -19,8 +19,8 @@ import { Steps } from "@astrojs/starlight/components";
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/archmaxai/archmax.git
-   cd archmax
+   git clone https://github.com/archmax-ai/semantics.git
+   cd semantics
    ```
 
 2. **Install dependencies**
@@ -46,6 +46,7 @@ import { Steps } from "@astrojs/starlight/components";
    This starts all workspaces via Turborepo:
    - **API**: `http://localhost:3000`
    - **Frontend**: `http://localhost:5173`
+   - If 5173 is taken (another project's dev server, say), set `FRONTEND_PORT=<port>` in the repo-root `.env.local`. Vite listens there and the API trusts `http://localhost:<port>` as a browser origin; without it, Vite fails fast on a busy port rather than moving to one the API would reject with `Invalid origin`.
    - **Docs**: `http://localhost:4321`
 
 </Steps>
@@ -53,7 +54,7 @@ import { Steps } from "@astrojs/starlight/components";
 ## Monorepo Structure
 
 ```
-archmax/
+semantics/
 ├── apps/
 │   ├── api/          # Hono API server
 │   ├── e2e/          # Playwright end-to-end tests
@@ -96,10 +97,10 @@ The `docker-compose.ci.yml` starts the app image alongside MongoDB, Redis, **Pos
 
 ```bash
 # Build (or pull) the app image
-docker build -t archmax:local .
+docker build -t semantics:local .
 
 # Start the full stack
-APP_IMAGE=archmax:local docker compose -f docker-compose.ci.yml up -d
+APP_IMAGE=semantics:local docker compose -f docker-compose.ci.yml up -d
 
 # Wait for health (may take 1-2 minutes while MSSQL boots)
 curl --retry 30 --retry-delay 5 --retry-connrefused http://localhost:8080/api/health
@@ -118,7 +119,7 @@ Default credentials are `admin` / `testpass123`. To override, set `UI_USERNAME` 
 
 **MSSQL note:** The SQL Server container (`mcr.microsoft.com/mssql/server:2022-latest`) requires at least 2 GB RAM and only runs on `linux/amd64`. On Apple Silicon Macs, Docker Desktop runs it under Rosetta emulation, which is slower to start. The compose file pins `platform: linux/amd64` for this service.
 
-In CI, E2E tests run automatically after the Docker image is built on every pull request.
+In CI, E2E tests run automatically after the Docker image is built on every pull request. That image is published as `ghcr.io/archmax-ai/semantics:pr-<number>` (the image name is fixed in the workflows and independent of the repository name), so you can run the same stack locally against a PR build with `APP_IMAGE=ghcr.io/archmax-ai/semantics:pr-<number>`.
 
 ## Building
 

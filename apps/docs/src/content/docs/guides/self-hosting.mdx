@@ -1,17 +1,17 @@
 ---
 title: Self-Hosting
-description: Deploy, back up, and maintain your archmax instance.
+description: Deploy, back up, and maintain your archmax semantics instance.
 ---
 
 import { Aside, Steps } from "@astrojs/starlight/components";
 
 ## Deployment Modes
 
-archmax supports two deployment modes. Choose the one that fits your needs:
+archmax semantics supports two deployment modes. Choose the one that fits your needs:
 
 | | Docker Compose | Standalone Docker |
 |---|---|---|
-| **Services** | Separate containers for archmax, MongoDB, and Redis | Single container with embedded MongoDB and Redis |
+| **Services** | Separate containers for archmax semantics, MongoDB, and Redis | Single container with embedded MongoDB and Redis |
 | **Setup** | Clone repo, configure `.env`, run `docker compose up` | Single `docker run` command |
 | **Backups** | Each service has its own volume; easy to back up individually | Single `/data` bind mount captures project data, MongoDB (embedded), and DuckDB cache |
 | **Scaling** | Can scale services independently; swap in managed MongoDB (Atlas, DocumentDB) | All-in-one; simpler but less flexible |
@@ -19,25 +19,25 @@ archmax supports two deployment modes. Choose the one that fits your needs:
 
 ### Docker Compose (Recommended)
 
-The recommended way to run archmax, with separate containers for the app, MongoDB, and Redis:
+The recommended way to run archmax semantics, with separate containers for the app, MongoDB, and Redis:
 
 ```bash
-git clone https://github.com/archmaxai/archmax.git
-cd archmax
+git clone https://github.com/archmax-ai/semantics.git
+cd semantics
 cp .env.example .env
 # Edit .env with your values
 docker compose up -d
 ```
 
-The included `docker-compose.yml` runs archmax with dedicated MongoDB 8 and Redis 8 containers.
+The included `docker-compose.yml` runs archmax semantics with dedicated MongoDB 8 and Redis 8 containers.
 
 ### Standalone Docker
 
-Run archmax as a single container with embedded MongoDB and Redis, with no external dependencies:
+Run archmax semantics as a single container with embedded MongoDB and Redis, with no external dependencies:
 
 ```bash
 docker run -d \
-  --name archmax \
+  --name semantics \
   -p 8080:8080 \
   -e BETTER_AUTH_SECRET=$(openssl rand -base64 32) \
   -e ENCRYPTION_KEY=$(openssl rand -base64 32) \
@@ -45,7 +45,7 @@ docker run -d \
   -e UI_PASSWORD=changeme \
   -e AGENT_API_KEY=your-api-key \
   -v ~/.archmax:/data \
-  ghcr.io/archmaxai/archmax:latest
+  ghcr.io/archmax-ai/semantics:latest
 ```
 
 MongoDB and Redis are embedded and start automatically. To use an external MongoDB, pass `MONGODB_URI`. To use an external Redis, pass `REDIS_URL`.
@@ -58,7 +58,7 @@ Save your `BETTER_AUTH_SECRET` value somewhere safe. If you lose it or change it
 
 ## Volumes & Data Persistence
 
-archmax stores persistent data inside the container at `/data`. You must mount this path to retain data across container restarts and upgrades.
+archmax semantics stores persistent data inside the container at `/data`. You must mount this path to retain data across container restarts and upgrades.
 
 ### Standalone Docker
 
@@ -83,7 +83,7 @@ Named volumes are managed by Docker and persist automatically. To use host bind 
 
 ```yaml
 volumes:
-  - ./data/archmax:/data   # instead of archmax-data:/data
+  - ./data/semantics:/data   # instead of archmax-data:/data
 ```
 
 <Aside type="caution">
@@ -92,17 +92,17 @@ Redis data is intentionally **not** persisted. The BullMQ queue is transient —
 
 ### Railway / Custom Volume Mounts
 
-When deploying to platforms like Railway that mount volumes at arbitrary paths (e.g. `/data`), set `ARCHMAX_DATA_DIR` to point inside the mount:
+When deploying to platforms like Railway that mount volumes at arbitrary paths (e.g. `/data`), set `SEMANTICS_DATA_DIR` to point inside the mount:
 
 | Variable | Value |
 |----------|-------|
-| `ARCHMAX_DATA_DIR` | `/data/projects` |
+| `SEMANTICS_DATA_DIR` | `/data/projects` |
 
 The entrypoint automatically fixes ownership on the configured data directory before starting services, so root-owned volume mounts work out of the box.
 
 ## Data Backup
 
-archmax stores two categories of persistent data:
+archmax semantics stores two categories of persistent data:
 
 | Data | Location | Description |
 |------|----------|-------------|
@@ -112,7 +112,7 @@ archmax stores two categories of persistent data:
 | External Database | MongoDB service/instance | Projects, connections, conversations, test data (when using Compose or external MongoDB) |
 
 <Aside type="tip">
-When using standalone Docker with embedded MongoDB, the single bind mount at `/data` captures all persistent state: project files, embedded MongoDB data, and the DuckDB extension cache. When using Docker Compose with external MongoDB, only project files (and DuckDB cache) live in the archmax container volume.
+When using standalone Docker with embedded MongoDB, the single bind mount at `/data` captures all persistent state: project files, embedded MongoDB data, and the DuckDB extension cache. When using Docker Compose with external MongoDB, only project files (and DuckDB cache) live in the archmax semantics container volume.
 </Aside>
 
 ### Backing Up Project Files
@@ -129,9 +129,9 @@ When using standalone Docker with embedded MongoDB, the single bind mount at `/d
 
    ```bash
    docker run --rm \
-     -v archmax_archmax-data:/data \
+     -v semantics_archmax-data:/data \
      -v $(pwd):/backup \
-     alpine tar czf /backup/archmax-projects-$(date +%Y%m%d).tar.gz -C /data .
+     alpine tar czf /backup/semantics-projects-$(date +%Y%m%d).tar.gz -C /data .
    ```
 
 3. **Restart**:
@@ -146,8 +146,8 @@ When using standalone Docker with embedded MongoDB, the single bind mount at `/d
 
 ```bash
 docker compose stop
-docker run --rm -v archmax_mongo-data:/data -v $(pwd):/backup \
-  alpine tar czf /backup/archmax-mongo-$(date +%Y%m%d).tar.gz -C /data .
+docker run --rm -v semantics_mongo-data:/data -v $(pwd):/backup \
+  alpine tar czf /backup/semantics-mongo-$(date +%Y%m%d).tar.gz -C /data .
 docker compose start
 ```
 
@@ -161,14 +161,14 @@ If you use a managed MongoDB service (Atlas, DocumentDB), rely on its built-in b
 docker compose stop
 # Restore project files
 docker run --rm \
-  -v archmax_archmax-data:/data \
+  -v semantics_archmax-data:/data \
   -v $(pwd):/backup \
-  alpine sh -c "rm -rf /data/* && tar xzf /backup/archmax-projects-20260408.tar.gz -C /data"
+  alpine sh -c "rm -rf /data/* && tar xzf /backup/semantics-projects-20260408.tar.gz -C /data"
 # Restore MongoDB
 docker run --rm \
-  -v archmax_mongo-data:/data \
+  -v semantics_mongo-data:/data \
   -v $(pwd):/backup \
-  alpine sh -c "rm -rf /data/* && tar xzf /backup/archmax-mongo-20260408.tar.gz -C /data"
+  alpine sh -c "rm -rf /data/* && tar xzf /backup/semantics-mongo-20260408.tar.gz -C /data"
 docker compose start
 ```
 
@@ -195,19 +195,21 @@ docker compose start
 For standalone Docker:
 
 ```bash
-docker pull ghcr.io/archmaxai/archmax:latest
-docker stop archmax && docker rm archmax
-docker run -d --name archmax -p 8080:8080 \
+docker pull ghcr.io/archmax-ai/semantics:latest
+docker stop archmax && docker rm semantics   # use `archmax` if the container predates the rename
+docker run -d --name semantics -p 8080:8080 \
   -e BETTER_AUTH_SECRET=your-existing-secret \
   -e ENCRYPTION_KEY=your-existing-key \
   -e UI_USERNAME=admin \
   -e UI_PASSWORD=your-password \
   -e AGENT_API_KEY=your-api-key \
   -v ~/.archmax:/data \
-  ghcr.io/archmaxai/archmax:latest
+  ghcr.io/archmax-ai/semantics:latest
 ```
 
 <Aside type="caution">
+Upgrading from a release published as `ghcr.io/archmaxai/archmax`? See [Upgrading from archmax](/reference/docker/#upgrading-from-archmax) — it is an image-name change only.
+
 Keep your `BETTER_AUTH_SECRET` the same across upgrades. Changing it invalidates all existing sessions and authentication data.
 </Aside>
 

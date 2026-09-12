@@ -9,9 +9,12 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.41.3",
-    "astro": "^6.4.8",
-    "sharp": "^0.35.3",
-    "starlight-image-zoom": "^0.15.0"
+    "@astrojs/starlight": "^0.42.0",
+    "astro": "^7.3.2",
+    "sharp": "^0.35.4",
+    "starlight-image-zoom": "^0.16.0"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.3.2"
   }
 }

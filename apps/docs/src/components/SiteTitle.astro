@@ -1,7 +1,7 @@
 ---
 import { logos } from 'virtual:starlight/user-images';
 import config from 'virtual:starlight/user-config';
-const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
+const { siteTitleHref } = Astro.locals.starlightRoute;
 const version = import.meta.env.APP_VERSION || 'dev';
 ---
 
@@ -28,9 +28,7 @@ const version = import.meta.env.APP_VERSION || 'dev';
 			</>
 		)
 	}
-	<span class:list={{ 'sr-only': config.logo?.replacesTitle }} translate="no">
-		{siteTitle}
-	</span>
+	<span class="product-name" translate="no">semantics</span>
 	<span class="version-badge">v{version}</span>
 </a>
 
@@ -48,6 +46,10 @@ const version = import.meta.env.APP_VERSION || 'dev';
 		}
 		span {
 			overflow: hidden;
+		}
+		.product-name {
+			font-weight: 500;
+			color: var(--sl-color-text);
 		}
 		img {
 			height: calc(var(--sl-nav-height) - 2 * var(--sl-nav-pad-y));

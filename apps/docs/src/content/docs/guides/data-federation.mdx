@@ -5,11 +5,11 @@ description: Query across multiple databases from a single project using DuckDB.
 
 import { Aside } from "@astrojs/starlight/components";
 
-archmax uses [DuckDB](https://duckdb.org/) as an in-process query engine that can federate queries across multiple database connections. Each project gets its own DuckDB instance with connections attached as named schemas.
+archmax semantics uses [DuckDB](https://duckdb.org/) as an in-process query engine that can federate queries across multiple database connections. Each project gets its own DuckDB instance with connections attached as named schemas.
 
 ## How It Works
 
-When you add a connection to a project and mark it as active, archmax attaches it to the project's DuckDB instance using DuckDB's extension system:
+When you add a connection to a project and mark it as active, archmax semantics attaches it to the project's DuckDB instance using DuckDB's extension system:
 
 | Database Type | DuckDB Extension | Registry |
 |---------------|-----------------|----------|
@@ -19,7 +19,6 @@ When you add a connection to a project and mark it as active, archmax attaches i
 | SQLite | `sqlite` | Core |
 | DuckDB | Native | - |
 | Iceberg REST Catalog | `iceberg` + `httpfs` | Core |
-| Firebird | `firebird` | Custom (unsigned) |
 
 Each connection's slug becomes the DuckDB schema alias. For example, a connection with slug `shopify` attached from a Postgres database makes its tables available as `shopify.<schema>.<table>`.
 
@@ -27,7 +26,7 @@ Each connection's slug becomes the DuckDB schema alias. For example, a connectio
 
 The SQL Server connector uses the [DuckDB MSSQL community extension](https://duckdb.org/community_extensions/extensions/mssql), which is installed automatically from the community registry.
 
-When using **Connection Details** (host/port fields), archmax builds an ADO.NET connection string:
+When using **Connection Details** (host/port fields), archmax semantics builds an ADO.NET connection string:
 
 ```
 Server=host,port;Database=db;User Id=user;Password=pass;Encrypt=yes
@@ -37,30 +36,11 @@ When using **Connection URI**, you can pass any format the extension accepts (AD
 
 The **Encrypt connection (TLS)** toggle controls the `Encrypt` parameter and defaults to on. Disable it only for local development servers that don't support TLS.
 
-### Firebird Connections
-
-Firebird is supported through a custom, **unsigned** DuckDB extension hosted at `https://archmaxai.github.io/duckdb_firebird`. Because the extension is unsigned, the `firebird` connection type is disabled by default and only appears in the connection form when the operator sets `DUCKDB_ENABLE_CUSTOM_FIREBIRD=true` (which also starts every DuckDB instance with `allow_unsigned_extensions`).
-
-When active, archmax installs the extension automatically (`SET custom_extension_repository = '<repo>'; INSTALL firebird; LOAD firebird;`) and attaches Firebird connections from the **Connection Details** fields:
-
-| Field | Description |
-|-------|-------------|
-| **Host** | Firebird server host |
-| **Port** | Firebird server port (default `3050`) |
-| **Database** | Database path or alias **as seen on the Firebird host machine** (e.g. `C:\firebird.fdb`) |
-| **User** | Firebird user (e.g. `SYSDBA`) |
-| **Password** | Firebird password |
-| **Charset** | Connection charset (default `UTF8`) |
-
-<Aside type="caution">
-The Firebird extension is unsigned and executes arbitrary native code inside the application process. Only enable `DUCKDB_ENABLE_CUSTOM_FIREBIRD` when you trust the extension source.
-</Aside>
-
 ### Iceberg REST Catalog Connections
 
 Iceberg connections let you query data in [Apache Iceberg](https://iceberg.apache.org/) tables exposed through an [Iceberg REST Catalog](https://duckdb.org/docs/current/core_extensions/iceberg/iceberg_rest_catalogs) (Lakekeeper, Polaris, Cloudflare R2, etc.).
 
-Unlike RDBMS connections, Iceberg uses a two-step attach: archmax creates a DuckDB secret with the bearer token, then attaches the catalog with the REST endpoint.
+Unlike RDBMS connections, Iceberg uses a two-step attach: archmax semantics creates a DuckDB secret with the bearer token, then attaches the catalog with the REST endpoint.
 
 **Required fields:**
 
@@ -134,20 +114,20 @@ These properties hold whenever the validator and `view_query` materialisation ar
 ### What the view layer does NOT protect against
 
 - **Modeller mistakes.** A `view_query` of `SELECT * FROM shop.public.users` exposes every column of `users`, including PII, password hashes, and audit columns. The platform never inspects view bodies for sensitive content, never auto-redacts columns, and never enforces row-level filters. Treat each `view_query` as an authorisation contract you have to write by hand.
-- **Co-tenancy across MCP tokens scoped to the same model.** Two MCP bearer tokens granting access to model `ecommerce` see exactly the same rows. There is no per-token row filter, no `current_user`-aware view body, no automatic tenant-id injection. If you need per-tenant isolation, model the tenant column explicitly in `view_query` and split tenants across separate archmax projects (or build a tenant-aware `view_query` that reads the agent identity from `params`).
+- **Co-tenancy across MCP tokens scoped to the same model.** Two MCP bearer tokens granting access to model `ecommerce` see exactly the same rows. There is no per-token row filter, no `current_user`-aware view body, no automatic tenant-id injection. If you need per-tenant isolation, model the tenant column explicitly in `view_query` and split tenants across separate archmax semantics projects (or build a tenant-aware `view_query` that reads the agent identity from `params`).
 - **Co-tenancy across models in the same project.** Every model in a project shares one DuckDB instance, one `duckdb.db` file, and the same set of attached connections with the same database credentials. There is no per-model database role. A connection user with DELETE rights upstream gives DuckDB latent DELETE rights for *every* model in the project — only `enable_external_access = false` and the read-only validator keep that latent power from being used.
 - **DuckDB / extension privilege-escalation bugs.** The validator parses with DuckDB's own parser and runs queries on the same process that holds every attached catalog. A binder, optimizer, or extension bug that lets a structurally-valid SELECT reach an unintended object (or trigger arbitrary code via a malicious community extension) is not contained by the view layer. Keep DuckDB and its extensions up to date.
 - **Resource exhaustion across the project.** `threads = 2` and `memory_limit = '512MB'` are session settings on a shared instance. A pathological query under one model can still cause memory pressure for queries running under another model in the same project, and the per-project `withProjectQuerySlot` semaphore caps concurrency but does not isolate work.
-- **Side-channels through the persistent file.** `<ARCHMAX_DATA_DIR>/projects/<projectId>/duckdb.db` holds every model's `_scope_<model>` schema in plain DDL. Anyone who can read the file can read every materialised view body. Protect the data directory with the same filesystem permissions you would give a database data dir.
+- **Side-channels through the persistent file.** `<SEMANTICS_DATA_DIR>/projects/<projectId>/duckdb.db` holds every model's `_scope_<model>` schema in plain DDL. Anyone who can read the file can read every materialised view body. Protect the data directory with the same filesystem permissions you would give a database data dir.
 - **Upstream credential leakage.** Connection passwords / tokens are encrypted at rest and redacted in API responses, but they are still passed to DuckDB's connector for every `ATTACH`. A query that triggers a driver-level error does not leak them to the API caller (the connection-test endpoint sanitises and the federated query path returns generic errors), but anything that gets into operator logs is your responsibility to retain or rotate.
 
 ### Operator checklist
 
 - **Use a least-privilege database user** for every connection — read-only on exactly the schemas your `view_query` bodies need. The validator is defence-in-depth on top of this, not a replacement for it.
 - **Treat `view_query` as the authorisation boundary.** Project only the columns the model needs (`SELECT id, status, total_amount FROM …`, never `SELECT *`). Apply the same row filters you would apply in a database VIEW intended for an external consumer (`WHERE deleted_at IS NULL`, `WHERE tenant_id = …`).
-- **Don't put two trust domains in the same project.** Separate customers, separate environments (prod vs staging), or separate sensitivity tiers go into separate archmax projects so they don't share the DuckDB instance, the persistent file, or the connection set.
+- **Don't put two trust domains in the same project.** Separate customers, separate environments (prod vs staging), or separate sensitivity tiers go into separate archmax semantics projects so they don't share the DuckDB instance, the persistent file, or the connection set.
 - **Rotate the upstream database password when scope changes.** Removing a dataset's `view_query` doesn't revoke any database privilege — only deactivating or deleting the connection does. If a model previously had access to a sensitive column and you tightened the body, also rotate the upstream credential.
-- **Lock down `ARCHMAX_DATA_DIR`** with filesystem-level permissions; treat each project's `duckdb.db` as sensitive.
+- **Lock down `SEMANTICS_DATA_DIR`** with filesystem-level permissions; treat each project's `duckdb.db` as sensitive.
 
 ## Connection Lifecycle
 
@@ -155,15 +135,15 @@ These properties hold whenever the validator and `view_query` materialisation ar
 - **Inactive connections** are detached from DuckDB but their configuration is preserved
 - **Deleted connections** are soft-deleted and fully detached
 
-Each project's DuckDB state lives in a persistent `duckdb.db` file under `<ARCHMAX_DATA_DIR>/projects/<projectId>/`. The instance is opened lazily on first use and closed on graceful shutdown so the file lock is released cleanly. Materialised VIEWs survive restarts because they are stored in that file. The file MUST NOT be committed to a project's Git repo (it is in the default project `.gitignore`) and it is safe to delete when the project is offline.
+Each project's DuckDB state lives in a persistent `duckdb.db` file under `<SEMANTICS_DATA_DIR>/projects/<projectId>/`. The instance is opened lazily on first use and closed on graceful shutdown so the file lock is released cleanly. Materialised VIEWs survive restarts because they are stored in that file. The file MUST NOT be committed to a project's Git repo (it is in the default project `.gitignore`) and it is safe to delete when the project is offline.
 
 ## Persistent DuckDB File (Operations)
 
-Each project's DuckDB instance is backed by a single file at `<ARCHMAX_DATA_DIR>/projects/<projectId>/duckdb.db` (plus its `.wal` and `.tmp` siblings during writes). Materialised VIEWs survive process restarts because they are stored in this file.
+Each project's DuckDB instance is backed by a single file at `<SEMANTICS_DATA_DIR>/projects/<projectId>/duckdb.db` (plus its `.wal` and `.tmp` siblings during writes). Materialised VIEWs survive process restarts because they are stored in this file.
 
 Operational notes:
 
-- **Where it lives** — `<ARCHMAX_DATA_DIR>/projects/<projectId>/duckdb.db`. `ARCHMAX_DATA_DIR` defaults to `./data` in development.
+- **Where it lives** — `<SEMANTICS_DATA_DIR>/projects/<projectId>/duckdb.db`. `SEMANTICS_DATA_DIR` defaults to `./data` in development.
 - **Resetting it** — call `POST /api/projects/<projectId>/connections/reinit?reset=true`. The API disposes the cached instance, deletes the file, and rebuilds from scratch on the next query. Without `?reset=true`, the file is preserved across `reinit`.
 - **Backups** — the file is a regular DuckDB database. Stop the process, copy the file (and its `.wal`/`.tmp` siblings if present), and restart. There is no online-backup contract.
 - **Git** — `duckdb.db`, `duckdb.db.wal`, and `duckdb.db.tmp` are excluded from every project's `.gitignore` and from the repository-level `.gitignore`. Do **not** commit them — they leak transient state, are noisy, and may contain catalog metadata.

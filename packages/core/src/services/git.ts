@@ -4,7 +4,7 @@ import { readdir, readFile, writeFile, unlink, stat, mkdir, rm } from "node:fs/p
 import git from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 
-const AUTHOR = { name: "archmax", email: "archmax@localhost" };
+const AUTHOR = { name: "archmax semantics", email: "semantics@localhost" };
 
 const DEFAULT_GITIGNORE = `large_tool_results/
 .*tmp
@@ -101,6 +101,8 @@ export class GitService {
   }
 
   async push(remote: GitRemoteConfig): Promise<void> {
+    await this.ensureRepo();
+    await this.ensureRemote(remote.url);
     const result = await git.push({
       fs,
       http,

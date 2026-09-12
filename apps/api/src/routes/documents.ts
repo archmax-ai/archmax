@@ -2,15 +2,10 @@ import { Hono } from "hono";
 import { getEnv } from "@archmax/core/config/env";
 import { DocumentFileService, FileTooLargeError } from "@archmax/core/services/document-files";
 import { AppError } from "../utils/errors";
+import { param } from "../utils/params";
 
 function getDocService(): DocumentFileService {
   return new DocumentFileService(getEnv().projectsDir);
-}
-
-function param(c: { req: { param: (name: string) => string | undefined } }, name: string): string {
-  const val = c.req.param(name);
-  if (!val) throw AppError.badRequest(`Missing parameter: ${name}`);
-  return val;
 }
 
 const app = new Hono()

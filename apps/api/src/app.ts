@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { logger } from "hono/logger";
-import { customFirebirdEnabled, getEnv } from "@archmax/core/config/env";
+import { getEnv } from "@archmax/core/config/env";
 import { runHealthChecks } from "@archmax/core/infra/health";
 import { corsMiddleware } from "./middleware/cors";
 import { csrfMiddleware } from "./middleware/csrf";
@@ -26,7 +26,7 @@ import testRuns from "./routes/test-runs";
 import playground from "./routes/playground";
 import improvements from "./routes/improvements";
 import dashboard from "./routes/dashboard";
-import archmaxMcp from "./mcp/archmax-route";
+import semanticsMcp from "./mcp/semantics-route";
 
 const app = new Hono()
   .use("*", logger())
@@ -62,12 +62,11 @@ const app = new Hono()
     const env = getEnv();
     return c.json({
       agentConfigured: !!env.AGENT_API_KEY,
-      firebirdEnabled: customFirebirdEnabled(),
     });
   })
   .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))
-  .route("/mcp/:slug/mcp", archmaxMcp)
-  .route("/mcp/:slug/test/mcp", archmaxMcp)
+  .route("/mcp/:slug/mcp", semanticsMcp)
+  .route("/mcp/:slug/test/mcp", semanticsMcp)
   .use("/api/*", csrfMiddleware)
   .use("/api/*", async (c, next) => {
     const session = await auth.api.getSession({ headers: c.req.raw.headers });

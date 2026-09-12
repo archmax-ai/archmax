@@ -120,7 +120,7 @@ RUN node -e " \
  && mkdir -p /duckdb-extensions \
  && cp -r /root/.duckdb/extensions/* /duckdb-extensions/ \
  && chown -R archmax:archmax /duckdb-extensions
-ENV HOME=/data ARCHMAX_DATA_DIR=/data
+ENV HOME=/data SEMANTICS_DATA_DIR=/data
 
 COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 RUN rm -f /etc/nginx/sites-enabled/default \

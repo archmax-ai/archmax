@@ -354,7 +354,7 @@ export function ModelGraphView({
   }, [initial.didAutoLayout, initial.nodes, saveNodePositions]);
 
   const handleNodeDragStart = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
+    (_event: MouseEvent | TouchEvent, node: Node) => {
       if (node.type !== "group-box") return;
       const groupId = (node.data as GroupBoxNodeData).groupId;
       const group = groupsRef.current.find((g) => g.id === groupId);
@@ -372,7 +372,7 @@ export function ModelGraphView({
   );
 
   const handleNodeDrag = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
+    (_event: MouseEvent | TouchEvent, node: Node) => {
       const drag = groupDragRef.current;
       if (!drag || node.type !== "group-box") return;
 
@@ -391,7 +391,7 @@ export function ModelGraphView({
   );
 
   const handleNodeDragStop = useCallback(
-    (_event: React.MouseEvent, node: Node, allNodes: Node[]) => {
+    (_event: MouseEvent | TouchEvent, node: Node, allNodes: Node[]) => {
       if (groupDragRef.current && node.type === "group-box") {
         const drag = groupDragRef.current;
         const dx = node.position.x - drag.startPos.x;

@@ -426,7 +426,7 @@ function MonitoringPage() {
         )}
       </div>
 
-      <Sheet open={!!selectedLog} onOpenChange={(open) => { if (!open) setSelectedLog(null); }}>
+      <Sheet open={!!selectedLog} onOpenChange={(open: boolean) => { if (!open) setSelectedLog(null); }}>
         <SheetContent side="right" className="sm:max-w-xl w-full" showCloseButton={false}>
           {selectedLog && (
             <>

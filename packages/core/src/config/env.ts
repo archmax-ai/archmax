@@ -13,7 +13,9 @@ const envSchema = z.object({
 
   CORS_ORIGINS: z.string().optional(),
 
-  ARCHMAX_DATA_DIR: z.string().optional().default("data"),
+  FRONTEND_PORT: z.string().optional(),
+
+  SEMANTICS_DATA_DIR: z.string().optional().default("data"),
 
   MCP_RATE_LIMIT_MAX: z.string().optional().default("120"),
 
@@ -32,8 +34,6 @@ const envSchema = z.object({
   AGENT_MAX_RETRIES: z.string().optional().default("3"),
   QUERY_TIMEOUT_MS: z.string().optional().default("30000"),
   MAX_CONCURRENT_QUERIES: z.string().optional().default("10"),
-
-  DUCKDB_ENABLE_CUSTOM_FIREBIRD: z.string().optional(),
 
   REDIS_URL: z.string().optional(),
   WORKER_CONCURRENCY: z.string().optional(),
@@ -54,7 +54,7 @@ const ENV_HINTS: Record<string, string> = {
   UI_PASSWORD:
     "Required (min 8 chars). The password used to log in to the admin UI.",
   APP_BASE_URL:
-    "Public URL of this instance (e.g. https://archmax.example.com). Set this when running behind a reverse proxy to avoid CORS/auth origin errors.",
+    "Public URL of this instance (e.g. https://semantics.example.com). Set this when running behind a reverse proxy to avoid CORS/auth origin errors.",
 };
 
 function formatEnvErrors(error: z.core.$ZodError): string[] {
@@ -111,16 +111,19 @@ function sleepForever(): Promise<never> {
 
 function buildParsedEnv(raw: RawEnv): ParsedEnv {
   const corsValue =
-    raw.CORS_ORIGINS || raw.APP_BASE_URL || "http://localhost:5173";
+    raw.CORS_ORIGINS || raw.APP_BASE_URL || `http://localhost:${raw.FRONTEND_PORT || "5173"}`;
 
   return {
     ...raw,
     AUTH_BASE_URL: raw.AUTH_BASE_URL || raw.APP_BASE_URL,
-    corsOrigins: corsValue
-      .split(",")
-      .map((o) => o.trim())
-      .filter(Boolean),
-    projectsDir: join(raw.ARCHMAX_DATA_DIR, "projects"),
+    corsOrigins: [
+      ...new Set([
+        ...corsValue.split(",").map((o) => o.trim()).filter(Boolean),
+        // The Vite dev server reads the same variable, so its origin is always trusted.
+        ...(raw.FRONTEND_PORT ? [`http://localhost:${raw.FRONTEND_PORT}`] : []),
+      ]),
+    ],
+    projectsDir: join(raw.SEMANTICS_DATA_DIR, "projects"),
   };
 }
 
@@ -134,7 +137,7 @@ function warnMissingBaseUrl(parsed: ParsedEnv): void {
       `${yellow}${bold}  WARNING:${reset}${yellow} APP_BASE_URL is not set.${reset}`,
     );
     console.error(
-      `${dim}  Set APP_BASE_URL to the public URL of this instance (e.g. https://archmax.example.com)${reset}`,
+      `${dim}  Set APP_BASE_URL to the public URL of this instance (e.g. https://semantics.example.com)${reset}`,
     );
     console.error(
       `${dim}  to avoid authentication and CORS errors behind a reverse proxy.${reset}`,
@@ -167,33 +170,4 @@ export function getEnv(): ParsedEnv {
     _env = buildParsedEnv(result.data);
   }
   return _env;
-}
-
-export type Env = ParsedEnv;
-
-const FIREBIRD_EXTENSION_REPOSITORY =
-  "https://archmaxai.github.io/duckdb_firebird";
-
-/**
- * Whether the custom, unsigned Firebird DuckDB extension is enabled.
- *
- * Off by default. Enabling it (`DUCKDB_ENABLE_CUSTOM_FIREBIRD=true|1`)
- * activates the `firebird` connection type and causes every DuckDB instance
- * to be started with `allow_unsigned_extensions` so the custom extension can
- * load (see `createDuckDBInstance`). This is the only switch that turns on
- * unsigned-extension support; the federation console never installs unsigned
- * extensions from arbitrary custom sources.
- */
-export function customFirebirdEnabled(): boolean {
-  const raw = getEnv().DUCKDB_ENABLE_CUSTOM_FIREBIRD?.trim().toLowerCase();
-  return raw === "true" || raw === "1";
-}
-
-/**
- * Custom extension repository URL used to install the Firebird extension via
- * `SET custom_extension_repository = '<repo>'`. Always the public
- * archmax-hosted repository.
- */
-export function firebirdExtensionRepository(): string {
-  return FIREBIRD_EXTENSION_REPOSITORY;
 }

@@ -16,8 +16,29 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "chromium",
+      name: "setup",
+      testMatch: /auth\.setup\.ts/,
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "chromium",
+      testIgnore: [/data-federation\.spec\.ts/, /mcp\.spec\.ts/],
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
+    },
+    // data-federation and mcp both provision the same connections in the shared project,
+    // so they must not run concurrently: mcp runs after federation has finished.
+    {
+      name: "federation",
+      testMatch: /data-federation\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
+    },
+    {
+      name: "mcp",
+      testMatch: /mcp\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["federation"],
     },
   ],
   webServer: process.env.CI

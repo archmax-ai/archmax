@@ -1,19 +1,19 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import { PRE_DISCLAIMER_STATE } from "./auth-state";
 
-const USERNAME = process.env.E2E_USERNAME ?? "admin";
-const PASSWORD = process.env.E2E_PASSWORD ?? "testpass123";
+// Signed in but with the disclaimer not yet acknowledged (acknowledgement lives in
+// localStorage, which this state deliberately omits), so each test sees the dialog
+// without spending a sign-in request.
+test.use({ storageState: PRE_DISCLAIMER_STATE });
 
-async function login(page: import("@playwright/test").Page) {
-  await page.goto("/login");
-  await page.locator("#username").fill(USERNAME);
-  await page.locator("#password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
+async function openApp(page: Page) {
+  await page.goto("/");
   await expect(page).not.toHaveURL(/\/login/, { timeout: 10_000 });
 }
 
 test.describe("First-login disclaimer", () => {
   test("shows disclaimer dialog after login", async ({ page }) => {
-    await login(page);
+    await openApp(page);
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible({ timeout: 5_000 });
@@ -25,7 +25,7 @@ test.describe("First-login disclaimer", () => {
   });
 
   test("continue button is disabled until checkbox is checked", async ({ page }) => {
-    await login(page);
+    await openApp(page);
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible({ timeout: 5_000 });
@@ -38,7 +38,7 @@ test.describe("First-login disclaimer", () => {
   });
 
   test("dismisses disclaimer and does not show again", async ({ page }) => {
-    await login(page);
+    await openApp(page);
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible({ timeout: 5_000 });

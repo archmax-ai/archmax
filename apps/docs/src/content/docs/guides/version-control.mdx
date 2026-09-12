@@ -1,13 +1,13 @@
 ---
 title: Version Control & GitHub
-description: How archmax tracks changes to your semantic models with built-in Git and optional GitHub sync.
+description: How archmax semantics tracks changes to your semantic models with built-in Git and optional GitHub sync.
 ---
 
-Every archmax project has a built-in Git repository that automatically tracks changes to your semantic models. You can optionally connect a GitHub remote to keep an external copy in sync.
+Every archmax semantics project has a built-in Git repository that automatically tracks changes to your semantic models. You can optionally connect a GitHub remote to keep an external copy in sync.
 
 ## How It Works
 
-archmax initializes a local Git repository inside each project's data directory. Every time you **publish** your semantic models, archmax:
+archmax semantics initializes a local Git repository inside each project's data directory. Every time you **publish** your semantic models, archmax:
 
 1. **Pulls** from the GitHub remote (if configured) to incorporate any upstream changes
 2. **Builds** the assembled model files into the `build/` directory
@@ -36,7 +36,7 @@ Each project directory is tracked as a Git repo:
 
 ### Default `.gitignore`
 
-archmax creates a `.gitignore` with sensible defaults:
+archmax semantics creates a `.gitignore` with sensible defaults:
 
 ```
 large_tool_results/
@@ -47,7 +47,7 @@ The `large_tool_results/` directory (used for intermediate AI agent output) is e
 
 ## Change Detection
 
-The **Publish** button appears in the UI whenever archmax detects changes in the project directory. Change detection works by computing a SHA-256 hash of all files in the project root, excluding:
+The **Publish** button appears in the UI whenever archmax semantics detects changes in the project directory. Change detection works by computing a SHA-256 hash of all files in the project root, excluding:
 
 - Dotfiles and dotdirs (`.git/`, `.gitignore`, etc.)
 - `node_modules/`
@@ -61,7 +61,7 @@ The **Settings** page shows a paginated publish history card with the commit mes
 
 ### Reverting to a Previous Version
 
-Each history entry (except the most recent) shows an **undo icon**. Clicking it opens a confirmation dialog — after confirming, archmax:
+Each history entry (except the most recent) shows an **undo icon**. Clicking it opens a confirmation dialog — after confirming, archmax semantics:
 
 1. Restores all source files to the selected commit's state
 2. Reassembles the build output
@@ -120,7 +120,7 @@ Re-init is destructive — it erases all local Git history. If you have a GitHub
 
 ## Conflict Handling
 
-archmax uses [isomorphic-git](https://isomorphic-git.org/) for all Git operations. When pulling from a remote:
+archmax semantics uses [isomorphic-git](https://isomorphic-git.org/) for all Git operations. When pulling from a remote:
 
 - **Fast-forward merges** are applied automatically
 - **Non-conflicting merges** (e.g. different files changed on each side) are merged and committed

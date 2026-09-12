@@ -45,7 +45,7 @@ function LoginPage() {
 
       <div className="relative z-10 w-full max-w-sm rounded-2xl bg-card/80 backdrop-blur-xl p-8 shadow-popup">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight">archmax</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">archmax semantics</h1>
           <p className="text-muted-foreground text-sm mt-1">Sign in to the admin panel</p>
         </div>
         <form onSubmit={handleSubmit} className="content-group">

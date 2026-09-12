@@ -3,18 +3,19 @@ import starlight from "@astrojs/starlight";
 import starlightImageZoom from "starlight-image-zoom";
 
 export default defineConfig({
-  site: "https://docs.archmax.ai",
+  site: "https://semantics.archmax.ai",
   integrations: [
     starlight({
       plugins: [starlightImageZoom()],
       components: {
         SiteTitle: "./src/components/SiteTitle.astro",
       },
-      title: "archmax",
+      title: "archmax semantics",
       logo: {
         light: "./src/assets/logo-light.svg",
         dark: "./src/assets/logo-dark.svg",
         replacesTitle: true,
+        alt: "archmax",
       },
       description:
         "Manage semantic descriptions of your databases and expose them to AI agents via MCP.",
@@ -28,12 +29,12 @@ export default defineConfig({
         {
           icon: "github",
           label: "GitHub",
-          href: "https://github.com/archmaxai/archmax",
+          href: "https://github.com/archmax-ai/semantics",
         },
       ],
       editLink: {
         baseUrl:
-          "https://github.com/archmaxai/archmax/edit/main/apps/docs/",
+          "https://github.com/archmax-ai/semantics/edit/main/apps/docs/",
       },
       sidebar: [
         {

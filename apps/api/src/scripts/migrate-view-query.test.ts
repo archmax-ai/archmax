@@ -114,7 +114,7 @@ describe("runMigration", () => {
   let logEntries: Array<{ level: string; message: string }>;
 
   beforeEach(async () => {
-    baseDir = await mkdtemp(join(tmpdir(), "archmax-migrate-"));
+    baseDir = await mkdtemp(join(tmpdir(), "semantics-migrate-"));
     logEntries = [];
   });
 

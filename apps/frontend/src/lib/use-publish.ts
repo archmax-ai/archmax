@@ -43,7 +43,7 @@ export function usePublish() {
       queryClient.invalidateQueries({ queryKey: ["publish-status", project._id] });
       toast.success("Changes published");
       if (data.pushWarning) {
-        toast.warning(`Published locally, but push to remote failed: ${data.pushWarning}`);
+        toast.error(`Published locally, but push to remote failed: ${data.pushWarning}`);
       }
     },
     onError: (err) => toast.error(err.message),

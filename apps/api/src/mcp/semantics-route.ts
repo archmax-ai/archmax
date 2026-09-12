@@ -9,7 +9,7 @@ import { Project, McpToken, hashMcpToken } from "@archmax/core/models/index";
 import { getEnv } from "@archmax/core/config/env";
 import { SemanticModelFileService } from "@archmax/core/services/semantic-model-files";
 import { PublishService } from "@archmax/core/services/publish";
-import { registerArchmaxTools, type McpAuthContext, type McpToolContext } from "./archmax-server";
+import { registerSemanticsTools, type McpAuthContext, type McpToolContext } from "./semantics-server";
 
 const _env = getEnv();
 const MCP_RATE_WINDOW_MS = 60_000;
@@ -159,7 +159,7 @@ app.all("/", async (c) => {
   let tempDir: string | null = null;
 
   if (isTestRoute) {
-    tempDir = await mkdtemp(join(tmpdir(), "archmax-test-build-"));
+    tempDir = await mkdtemp(join(tmpdir(), "semantics-test-build-"));
     const publishSvc = new PublishService(projectsDir);
     const assembledDir = join(tempDir, authCtx.projectId);
     await publishSvc.assemble(authCtx.projectId, assembledDir);
@@ -171,7 +171,7 @@ app.all("/", async (c) => {
   const toolCtx: McpToolContext = { ...authCtx, fileSvc };
 
   const mcpServer = new McpServer({
-    name: "archmax",
+    name: "archmax-semantics",
     version: "1.0.0",
     description: "Semantic layer tools for querying data models and connections",
   });
@@ -193,9 +193,6 @@ app.all("/", async (c) => {
     },
   });
 
-  await registerArchmaxTools(mcpServer, toolCtx);
-  await mcpServer.connect(transport);
-
   transport.onclose = () => {
     const sid = transport.sessionId;
     if (sid) sessions.delete(sid);
@@ -204,7 +201,23 @@ app.all("/", async (c) => {
     }
   };
 
-  return transport.handleRequest(c.req.raw);
+  try {
+    await registerSemanticsTools(mcpServer, toolCtx);
+    await mcpServer.connect(transport);
+    const response = await transport.handleRequest(c.req.raw);
+    // A one-shot request that never initialised a persistent session leaves no
+    // `onclose` to fire, so the assembled build dir under os.tmpdir() would
+    // leak. Clean it up here once we know no session took ownership of it.
+    if (capturedTempDir && !transport.sessionId) {
+      rm(capturedTempDir, { recursive: true, force: true }).catch(() => {});
+    }
+    return response;
+  } catch (err) {
+    if (capturedTempDir) {
+      rm(capturedTempDir, { recursive: true, force: true }).catch(() => {});
+    }
+    throw err;
+  }
 });
 
 export default app;

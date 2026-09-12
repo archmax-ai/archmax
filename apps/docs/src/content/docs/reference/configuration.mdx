@@ -1,11 +1,11 @@
 ---
 title: Configuration
-description: Environment variables and configuration options for archmax.
+description: Environment variables and configuration options for archmax semantics.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
 
-archmax is configured through environment variables. Set them in your shell, `.env` file, or Docker Compose config.
+archmax semantics is configured through environment variables. Set them in your shell, `.env` file, or Docker Compose config.
 
 ## Required Variables
 
@@ -28,7 +28,7 @@ Save your `BETTER_AUTH_SECRET` somewhere safe. If you lose it or change it, all 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `APP_BASE_URL` | - | Public URL of this instance (e.g. `https://archmax.example.com`). **Set this when running behind a reverse proxy.** Automatically configures CORS allowed origins and auth callback URL. |
+| `APP_BASE_URL` | - | Public URL of this instance (e.g. `https://semantics.example.com`). **Set this when running behind a reverse proxy.** Automatically configures CORS allowed origins and auth callback URL. |
 | `PORT` | `3000` | API server port |
 | `CORS_ORIGINS` | _(derived)_ | Comma-separated allowed origins. Defaults to `APP_BASE_URL` when set, otherwise `http://localhost:5173`. Override to allow additional origins. |
 | `AUTH_BASE_URL` | _(derived)_ | Public URL for auth callbacks. Defaults to `APP_BASE_URL` when set, otherwise `http://localhost:PORT`. |
@@ -64,7 +64,8 @@ Save your `ENCRYPTION_KEY` and keep it consistent across restarts and upgrades. 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ARCHMAX_DATA_DIR` | `/data` (Docker) or `data` (local) | Root data directory. All persistent data lives under this path: `projects/` (semantic models), `mongodb/` (embedded DB), `.duckdb/` (extension cache). |
+| `SEMANTICS_DATA_DIR` | `/data` (Docker) or `data` (local) | Root data directory. All persistent data lives under this path: `projects/` (semantic models), `mongodb/` (embedded DB), `.duckdb/` (extension cache). |
+| `ARCHMAX_DATA_DIR` | - | **Deprecated.** Pre-rename alias for `SEMANTICS_DATA_DIR`. Still honoured (with a startup warning) so existing deployments keep working; `SEMANTICS_DATA_DIR` wins when both are set. |
 
 Inside the Docker image, persistent application data lives under `/data/`:
 

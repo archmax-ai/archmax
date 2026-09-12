@@ -22,6 +22,7 @@ import {
 } from "@archmax/ui";
 import { ProjectSelector } from "./project-selector";
 import { UserMenu } from "./user-menu";
+import { api } from "@/lib/api";
 import type { Project } from "@/lib/project-context";
 
 type NavChildPath =
@@ -87,9 +88,9 @@ export function AppSidebar({
   const { data: versionData } = useQuery({
     queryKey: ["app-version"],
     queryFn: async () => {
-      const res = await fetch("/api/version");
+      const res = await api.api.version.$get();
       if (!res.ok) return { version: null };
-      return res.json() as Promise<{ version: string }>;
+      return res.json();
     },
     staleTime: Infinity,
   });
@@ -132,10 +133,16 @@ export function AppSidebar({
       >
         <div className="flex h-14 items-center justify-between px-3">
           {!collapsed && (
-            <div className="flex items-center gap-1.5 pl-1">
-              <span className="text-lg font-semibold tracking-tight">
-                archmax
-              </span>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Link
+                to="/"
+                aria-label="archmax semantics"
+                className="flex min-w-0 items-center rounded-md px-1 py-1 transition-opacity hover:opacity-80"
+              >
+                <span className="truncate text-xs font-semibold tracking-tight">
+                  archmax semantics
+                </span>
+              </Link>
               {versionData?.version && (
                 <span className="text-[10px] leading-none rounded-full px-1.5 py-0.5 bg-foreground/[0.08] text-sidebar-foreground/50 font-medium">
                   v{versionData.version}
@@ -146,7 +153,7 @@ export function AppSidebar({
           <button
             onClick={onToggle}
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-foreground/[0.05] text-sidebar-foreground/60",
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-foreground/[0.05] text-sidebar-foreground/60",
               collapsed && "mx-auto",
             )}
           >

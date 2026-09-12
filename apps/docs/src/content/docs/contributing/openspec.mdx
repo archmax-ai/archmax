@@ -3,14 +3,14 @@ title: OpenSpec Workflow
 description: How to use the spec-driven development workflow for contributing changes.
 ---
 
-archmax uses **[OpenSpec](https://github.com/nicholasgriffintn/openspec)** for spec-driven development. **Every feature PR must include a corresponding spec change.** This is a hard requirement, not optional. A proposal with spec deltas gets reviewed first, and implementation only begins after approval.
+archmax semantics uses **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** for spec-driven development. **Every feature PR must include a corresponding spec change.** This is a hard requirement, not optional. A proposal with spec deltas gets reviewed first, and implementation only begins after approval.
 
 ## Install OpenSpec
 
 Install the CLI globally so it's available in your terminal:
 
 ```bash
-npm install -g openspec-cli
+npm install -g @fission-ai/openspec
 ```
 
 Verify the installation:
@@ -47,7 +47,7 @@ PRs without spec changes will be rejected during review. Bug fixes, typo correct
 
 ```
 openspec/
-├── project.md          # Project conventions and context
+├── config.yaml         # Workflow schema + project conventions (context: block)
 ├── specs/              # Current truth: what IS built
 │   └── <capability>/
 │       └── spec.md     # Requirements and scenarios
@@ -59,22 +59,27 @@ openspec/
 │       └── specs/      # Delta changes to capabilities
 │           └── <capability>/
 │               └── spec.md
-└── AGENTS.md           # AI assistant instructions
+└── archive/            # Completed changes, dated
 ```
+
+AI assistant instructions are no longer checked in as `openspec/AGENTS.md` — `openspec init`
+installs them as agent skills (for example `.claude/skills/openspec-*/` and
+`.cursor/skills/openspec-*/`), and the `context:` block in `openspec/config.yaml` carries the
+project conventions that used to live in `openspec/project.md`.
 
 ## Creating a Proposal
 
-Proposals should be generated using AI assistants with the OpenSpec skill, not hand-written. The project includes an `openspec-proposal` Cursor command that scaffolds all required files with correct formatting, validates the result, and avoids common mistakes like missing scenarios or malformed headers.
+Proposals should be generated using AI assistants with the OpenSpec skills, not hand-written. `openspec init` installs an `/opsx:propose` command that scaffolds all required files with correct formatting, validates the result, and avoids common mistakes like missing scenarios or malformed headers.
 
-**Using the Cursor command (recommended):**
+**Using the slash command (recommended):**
 
-Describe your change and invoke the `/openspec-proposal` command. The assistant will:
+Describe your change and invoke the `/opsx:propose` command. The assistant will:
 1. Review existing specs and active changes for conflicts
 2. Pick a unique change ID
 3. Scaffold `proposal.md`, `tasks.md`, `design.md` (if needed), and spec deltas
 4. Validate with `openspec validate <change-id> --strict`
 
-**Manual creation (if not using Cursor):**
+**Manual creation (without the slash command):**
 
 1. **Pick a change ID**: kebab-case, verb-led (e.g., `add-two-factor-auth`, `update-mcp-tools`)
 
@@ -101,10 +106,11 @@ When your change affects user-facing behavior, include a documentation update ta
 ## Useful Commands
 
 ```bash
-openspec list              # List active changes
-openspec list --specs      # List all specifications
-openspec show <item>       # View change or spec details
-openspec validate --strict # Validate all changes
+openspec list                    # List active changes
+openspec list --specs            # List all specifications
+openspec show <item>             # View change or spec details
+openspec validate --all --strict # Validate all changes and specs
+openspec update                  # Refresh instruction files after a CLI upgrade
 ```
 
 ## After Deployment

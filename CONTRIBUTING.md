@@ -1,4 +1,4 @@
-# Contributing to archmax
+# Contributing to archmax semantics
 
 ## Getting Started
 
@@ -167,12 +167,12 @@ The `docker-compose.ci.yml` starts the app image alongside MongoDB, Redis, Postg
 
 ```bash
 # 1. Build (or pull) the app image
-docker build -t archmax:local .
+docker build -t semantics:local .
 # -- or pull from GHCR:
-# docker pull ghcr.io/archmaxai/archmax:latest
+# docker pull ghcr.io/archmax-ai/semantics:latest
 
 # 2. Start the full stack (set APP_IMAGE to your local tag)
-APP_IMAGE=archmax:local docker compose -f docker-compose.ci.yml up -d
+APP_IMAGE=semantics:local docker compose -f docker-compose.ci.yml up -d
 
 # 3. Wait for the health endpoint
 curl --retry 30 --retry-delay 5 --retry-connrefused http://localhost:8080/api/health
@@ -225,7 +225,7 @@ Config lives in [`.github/dependabot.yml`](.github/dependabot.yml).
   human-authored PRs. Merge only after both pass.
 - **OpenSpec exemption.** Dependabot-authored PRs do **not** require an
   `openspec/changes/<id>/` entry. This matches the existing exemption for
-  "non-breaking dependency updates" in `openspec/project.md`.
+  "non-breaking dependency updates" in the `context:` block of `openspec/config.yaml`.
 
 ## Releases
 
@@ -244,18 +244,20 @@ Releases are created automatically when a labeled PR is merged to `main`. No man
 2. When the PR merges, the release workflow:
    - Creates a git tag with the new version
    - Publishes a GitHub Release with auto-generated notes
-   - Builds and pushes a Docker image to `ghcr.io`
+   - Builds and pushes the Docker image to `ghcr.io/archmax-ai/semantics`
 
 3. PRs without a release label are merged normally with no release.
 
 ### Docker images
 
+Images are always published as `ghcr.io/archmax-ai/semantics` — the name is fixed in the workflows and does not follow the GitHub repository name. Every pull request also publishes `ghcr.io/archmax-ai/semantics:pr-<number>` (the bot comments the pull command on the PR), which you can pass as `APP_IMAGE` to the E2E stack.
+
 Released images are pushed to GitHub Container Registry:
 
 ```bash
 # Latest release
-docker pull ghcr.io/archmaxai/archmax:latest
+docker pull ghcr.io/archmax-ai/semantics:latest
 
 # Pinned version
-docker pull ghcr.io/archmaxai/archmax:1.2.3
+docker pull ghcr.io/archmax-ai/semantics:1.2.3
 ```

@@ -1,4 +1,5 @@
 import type { SemanticModel, Dataset, Field, CustomExtension } from "./semantic-model-schema";
+import { SIMPLE_IDENTIFIER_RE } from "./sql-identifier";
 
 export const DEFAULT_ITEMS_PER_PAGE = 50;
 
@@ -14,14 +15,13 @@ export function buildSourceMap(datasets: Dataset[]): SourceMap {
   return map;
 }
 
-const SIMPLE_IDENT_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
 export function buildColumnMap(datasets: Dataset[]): ColumnMap {
   const map = new Map<string, string>();
   for (const ds of datasets) {
     for (const f of ds.fields) {
       const expr = f.expression.dialects[0]?.expression;
-      if (expr && expr !== f.name && SIMPLE_IDENT_RE.test(expr)) {
+      if (expr && expr !== f.name && SIMPLE_IDENTIFIER_RE.test(expr)) {
         map.set(expr, f.name);
       }
     }

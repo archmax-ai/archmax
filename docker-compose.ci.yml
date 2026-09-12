@@ -1,11 +1,11 @@
 # CI and local E2E stack.
-# Usage:  APP_IMAGE=ghcr.io/archmaxai/archmax:pr-42 docker compose -f docker-compose.ci.yml --env-file /dev/null up -d
+# Usage:  APP_IMAGE=ghcr.io/archmax-ai/semantics:pr-42 docker compose -f docker-compose.ci.yml --env-file /dev/null up -d
 # Credentials default to admin/testpass123 for local use (compose interpolation defaults).
 # In CI the workflow generates random values and passes them via environment.
 
 services:
   app:
-    image: ${APP_IMAGE:-ghcr.io/archmaxai/archmax:latest}
+    image: ${APP_IMAGE:-ghcr.io/archmax-ai/semantics:latest}
     ports:
       - "8080:8080"
     environment:
@@ -110,7 +110,8 @@ services:
   # ── Iceberg (Lakekeeper + MinIO) ──────────────────────────────────
 
   minio:
-    image: minio/minio:latest
+    # MinIO no longer publishes to Docker Hub (pulls of minio/minio are denied); quay.io is the supported registry.
+    image: quay.io/minio/minio:latest
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin

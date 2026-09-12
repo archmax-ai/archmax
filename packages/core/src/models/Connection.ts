@@ -8,7 +8,6 @@ export const CONNECTION_TYPES = [
   "sqlite",
   "duckdb",
   "iceberg",
-  "firebird",
 ] as const;
 
 export type ConnectionType = (typeof CONNECTION_TYPES)[number];
@@ -22,7 +21,6 @@ export interface IConnectionConfig {
   password?: string;
   uri?: string;
   encrypt?: boolean;
-  charset?: string;
   endpoint?: string;
   warehouse?: string;
   token?: string;
@@ -70,7 +68,6 @@ const ConnectionConfigSchema = new Schema<IConnectionConfig>(
     password: { type: String },
     uri: { type: String },
     encrypt: { type: Boolean },
-    charset: { type: String },
     endpoint: { type: String },
     warehouse: { type: String },
     token: { type: String },

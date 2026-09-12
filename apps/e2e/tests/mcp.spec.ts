@@ -1,16 +1,8 @@
 import { test, expect, type Page, type BrowserContext, type APIRequestContext, type APIResponse } from "@playwright/test";
-import * as path from "node:path";
-import * as fs from "node:fs";
-import { fileURLToPath } from "node:url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { USER_STATE as AUTH_FILE, readProjectState } from "./auth-state";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:8080";
-const USERNAME = process.env.E2E_USERNAME ?? "admin";
-const PASSWORD = process.env.E2E_PASSWORD ?? "testpass123";
 
-const PROJECT_NAME = "E2E Federation";
 const MODEL_NAME = "e2e_federation";
 const TOKEN_NAME = "E2E MCP Test Token";
 
@@ -42,45 +34,9 @@ const CONNECTIONS = [
   },
 ] as const;
 
-const AUTH_FILE = path.join(__dirname, ".mcp-auth-state.json");
-
 const MCP_ACCEPT = "application/json, text/event-stream";
 
 // ── Helpers ──────────────────────────────────────────────────────────
-
-async function loginAndSaveState(page: Page, context: BrowserContext) {
-  await page.goto("/login");
-  await page.locator("#username").fill(USERNAME);
-  await page.locator("#password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).not.toHaveURL(/\/login/, { timeout: 10_000 });
-
-  const disclaimer = page.getByRole("dialog");
-  if (await disclaimer.isVisible({ timeout: 3_000 }).catch(() => false)) {
-    await disclaimer.locator("input[type='checkbox']").check();
-    await disclaimer.getByRole("button", { name: "Continue" }).click();
-  }
-
-  await context.storageState({ path: AUTH_FILE });
-}
-
-async function ensureProject(page: Page): Promise<string> {
-  await page.goto("/");
-  await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(500);
-
-  const url = page.url();
-  const projectMatch = url.match(/\/([a-f0-9]{24})(?:\/|$)/);
-  if (projectMatch) return projectMatch[1];
-
-  await page.getByRole("button", { name: "Select a project" }).click();
-  await page.getByRole("menuitem", { name: "New Project" }).click();
-  await page.getByLabel("Title").fill(PROJECT_NAME);
-  await page.getByRole("button", { name: "Create" }).click();
-  await page.waitForURL(/\/[a-f0-9]{24}(?:\/|$)/, { timeout: 10_000 });
-  const newUrl = page.url();
-  return newUrl.match(/\/([a-f0-9]{24})(?:\/|$)/)![1];
-}
 
 async function createConnection(
   page: Page,
@@ -337,7 +293,7 @@ async function mcpInitialize(
  *
  * Every resumed MCP request must re-authenticate with the same Bearer token
  * that originally opened the session — see `authenticateRequest` in
- * `apps/api/src/mcp/archmax-route.ts`. Sending only `mcp-session-id` returns 401.
+ * `apps/api/src/mcp/semantics-route.ts`. Sending only `mcp-session-id` returns 401.
  */
 async function mcpToolCall(
   request: APIRequestContext,
@@ -372,12 +328,10 @@ test.describe.serial("MCP Layer", () => {
 
   // ── Setup: login, project, connections ──────────────────────────
 
-  test("login and ensure project exists", async ({ browser }) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
+  test("load shared project and session", async ({ browser }) => {
+    const context = await browser.newContext({ storageState: AUTH_FILE });
 
-    await loginAndSaveState(page, context);
-    projectId = await ensureProject(page);
+    projectId = readProjectState().id;
     expect(projectId).toBeTruthy();
 
     sessionCookie = await getSessionCookie(context);
@@ -519,7 +473,7 @@ test.describe.serial("MCP Layer", () => {
     mcpSessionId = sessionId;
 
     const result = response as { result?: { serverInfo?: { name: string } } };
-    expect(result.result?.serverInfo?.name).toBe("archmax");
+    expect(result.result?.serverInfo?.name).toBe("archmax-semantics");
   });
 
   // ── MCP tool tests ─────────────────────────────────────────────
@@ -886,7 +840,4 @@ test.describe.serial("MCP Layer", () => {
     expect(res.ok()).toBe(true);
   });
 
-  test.afterAll(() => {
-    if (fs.existsSync(AUTH_FILE)) fs.unlinkSync(AUTH_FILE);
-  });
 });

@@ -1,14 +1,14 @@
-# archmax
+# archmax semantics
 
-A semantic layer for your data: archmax describes it, you sharpen it, AI agents query it.
+A semantic layer for your data: archmax semantics describes it, you sharpen it, AI agents query it.
 
 <p align="center">
-  <a href="https://docs.archmax.ai"><strong>Documentation</strong></a> &nbsp;&middot;&nbsp;
-  <a href="https://github.com/archmaxai/archmax/issues"><strong>Issues</strong></a> &nbsp;&middot;&nbsp;
-  <a href="https://github.com/archmaxai/archmax"><strong>GitHub</strong></a>
+  <a href="https://semantics.archmax.ai"><strong>Documentation</strong></a> &nbsp;&middot;&nbsp;
+  <a href="https://github.com/archmax-ai/semantics/issues"><strong>Issues</strong></a> &nbsp;&middot;&nbsp;
+  <a href="https://github.com/archmax-ai/semantics"><strong>GitHub</strong></a>
 </p>
 
-> **Heads up: archmax is experimental.** The core ideas are stable, but APIs, file formats, and configuration may change between releases. We try to avoid breaking changes, but can't guarantee stability yet. Pin your version and check the changelog before upgrading.
+> **Heads up: archmax semantics is experimental.** The core ideas are stable, but APIs, file formats, and configuration may change between releases. We try to avoid breaking changes, but can't guarantee stability yet. Pin your version and check the changelog before upgrading.
 
 <table>
 <tr>
@@ -45,9 +45,9 @@ Even when agents *can* query your database, they have no idea what the data actu
 
 The gap between "AI can write SQL" and "AI understands our data" is where most agent-database projects stall.
 
-## How archmax Solves This
+## How archmax semantics Solves This
 
-archmax puts a **semantic layer** between your databases and AI agents. Archmax describes your data; you sharpen it with the context that matters; agents query through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/).
+archmax semantics puts a **semantic layer** between your databases and AI agents. archmax semantics describes your data; you sharpen it with the context that matters; agents query through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/).
 
 Instead of raw database access, agents get:
 
@@ -57,11 +57,11 @@ Instead of raw database access, agents get:
 - **Structure**: typed datasets, explicit relationships, and reusable metric definitions stored as [OSI](https://github.com/open-semantic-interchange/OSI) YAML
 - **Token efficiency**: OSI models are converted to compressed markdown digests before being sent to agents, reducing token usage by 3–5× compared to raw YAML
 
-The result: AI agents that query your data reliably, safely, and with understanding, not guesswork. The approach is conceptually similar to [Snowflake Semantic Views](https://docs.snowflake.com/en/user-guide/views-semantic/overview): Both layer business meaning (metrics, dimensions, relationships) over physical tables so consumers get consistent definitions instead of raw column names. The key difference is that archmax is database-agnostic (federating across Postgres, MySQL, MSSQL, SQLite, DuckDB, and Iceberg REST Catalogs).
+The result: AI agents that query your data reliably, safely, and with understanding, not guesswork. The approach is conceptually similar to [Snowflake Semantic Views](https://docs.snowflake.com/en/user-guide/views-semantic/overview): Both layer business meaning (metrics, dimensions, relationships) over physical tables so consumers get consistent definitions instead of raw column names. The key difference is that archmax semantics is database-agnostic (federating across Postgres, MySQL, MSSQL, SQLite, DuckDB, and Iceberg REST Catalogs).
 
-Built on the **[Open Semantic Interchange (OSI)](https://github.com/open-semantic-interchange/OSI)** spec, an open standard for describing datasets, relationships, and metrics in a vendor-neutral way. archmax uses OSI YAML as its internal storage format for semantic model definitions — every dataset, field, relationship, and metric is persisted as spec-compliant YAML files on disk.
+Built on the **[Open Semantic Interchange (OSI)](https://github.com/open-semantic-interchange/OSI)** spec, an open standard for describing datasets, relationships, and metrics in a vendor-neutral way. archmax semantics uses OSI YAML as its internal storage format for semantic model definitions — every dataset, field, relationship, and metric is persisted as spec-compliant YAML files on disk.
 
-Because the OSI YAML format is verbose and token-intensive, archmax **does not serve raw YAML to AI agents**. Instead, when an agent requests model information through MCP tools, the OSI model is converted on-the-fly into a **compressed markdown digest** that preserves all semantically relevant information (field types, descriptions, enums, relationships, examples) while using **3–5× fewer tokens** than the equivalent YAML. This makes agent interactions significantly cheaper and faster without sacrificing context quality.
+Because the OSI YAML format is verbose and token-intensive, archmax semantics **does not serve raw YAML to AI agents**. Instead, when an agent requests model information through MCP tools, the OSI model is converted on-the-fly into a **compressed markdown digest** that preserves all semantically relevant information (field types, descriptions, enums, relationships, examples) while using **3–5× fewer tokens** than the equivalent YAML. This makes agent interactions significantly cheaper and faster without sacrificing context quality.
 
 ## Features
 
@@ -79,18 +79,18 @@ Because the OSI YAML format is verbose and token-intensive, archmax **does not s
 
 ### Docker (Standalone)
 
-Run archmax as a single container with embedded MongoDB and Redis:
+Run archmax semantics as a single container with embedded MongoDB and Redis:
 
 ```bash
 docker run -d \
-  --name archmax \
+  --name semantics \
   -p 8080:8080 \
   -e BETTER_AUTH_SECRET=$(openssl rand -base64 32) \
   -e UI_USERNAME=admin \
   -e UI_PASSWORD=changeme \
   -e AGENT_API_KEY=your-openrouter-api-key \
   -v ~/.archmax:/data \
-  ghcr.io/archmaxai/archmax:latest
+  ghcr.io/archmax-ai/semantics:latest
 ```
 
 > **Volume mount:** The `-v ~/.archmax:/data` bind mount persists all application data on the host — semantic model YAML files (`projects/`), embedded MongoDB data (`mongodb/`), and the DuckDB extension cache (`.duckdb/`). Without this mount, all data is lost when the container is removed.
@@ -103,12 +103,12 @@ Open `http://localhost:8080` and log in with username `admin` (or your `UI_USERN
 
 ### Docker Compose (Recommended for Production)
 
-Runs archmax with dedicated MongoDB and Redis containers instead of the embedded services:
+Runs archmax semantics with dedicated MongoDB and Redis containers instead of the embedded services:
 
 ```bash
 # 1. Clone the repo (or copy docker-compose.yml + .env.example)
-git clone https://github.com/archmaxai/archmax.git
-cd archmax
+git clone https://github.com/archmax-ai/semantics.git
+cd semantics
 
 # 2. Create your .env from the example and fill in the required values
 cp .env.example .env
@@ -140,13 +140,13 @@ The stack exposes port **8080** and persists data in two Docker volumes:
 | `archmax-data` | `/data` | Semantic model YAML files, DuckDB extension cache |
 | `mongo-data` | `/data/db` (mongo container) | MongoDB database files |
 
-These volumes are created automatically by Docker Compose. To use host bind mounts instead, edit `docker-compose.yml` and replace the named volumes with paths (e.g. `./data/archmax:/data`).
+These volumes are created automatically by Docker Compose. To use host bind mounts instead, edit `docker-compose.yml` and replace the named volumes with paths (e.g. `./data/semantics:/data`).
 
 ### Local Development
 
 ```bash
-git clone https://github.com/archmaxai/archmax.git
-cd archmax
+git clone https://github.com/archmax-ai/semantics.git
+cd semantics
 cp .env.example .env.local   # Edit with your settings
 pnpm install
 pnpm dev
@@ -162,7 +162,7 @@ pnpm dev
 ## Architecture
 
 ```
-archmax/
+semantics/
 ├── apps/
 │   ├── api/          # Hono API server
 │   ├── e2e/          # Playwright end-to-end tests
@@ -197,7 +197,7 @@ Configure your MCP client with:
 ```json
 {
   "mcpServers": {
-    "archmax": {
+    "archmax-semantics": {
       "url": "https://your-server/mcp/your-project/mcp",
       "headers": {
         "Authorization": "Bearer sk-your-token"
@@ -209,7 +209,7 @@ Configure your MCP client with:
 
 ## Version Control & GitHub
 
-Every project has a built-in Git repository that automatically tracks changes. Each time you **publish**, archmax commits the current state of your semantic models (source YAML and assembled build output) with your publish message.
+Every project has a built-in Git repository that automatically tracks changes. Each time you **publish**, archmax semantics commits the current state of your semantic models (source YAML and assembled build output) with your publish message.
 
 Optionally connect a GitHub remote in **Settings → GitHub** to keep an external copy in sync. The publish flow becomes: pull → build → commit → push. You need a [Personal Access Token](https://github.com/settings/tokens) with the `repo` scope (classic) or `Contents: Read and write` (fine-grained).
 
@@ -221,7 +221,7 @@ Key capabilities:
 - **Conflict detection** — blocks publishing when merge conflicts exist and tells you which files need attention
 - **Re-init** — reset local Git history if needed (working files are preserved)
 
-See the [Version Control guide](https://docs.archmax.ai/guides/version-control/) for details.
+See the [Version Control guide](https://semantics.archmax.ai/guides/version-control/) for details.
 
 ## Configuration
 
@@ -231,7 +231,7 @@ Key environment variables (see `.env.example` for the full list):
 |----------|-------------|
 | `BETTER_AUTH_SECRET` | Session encryption secret (min 32 chars). Save and reuse across restarts. |
 | `UI_USERNAME` / `UI_PASSWORD` | Admin credentials (default username: `admin`). `UI_PASSWORD` is reapplied to the admin account on every API startup; update it and restart to rotate the password. |
-| `APP_BASE_URL` | Public URL of this instance (e.g. `https://archmax.example.com`). Set when behind a reverse proxy to auto-configure CORS and auth. |
+| `APP_BASE_URL` | Public URL of this instance (e.g. `https://semantics.example.com`). Set when behind a reverse proxy to auto-configure CORS and auth. |
 | `ENCRYPTION_KEY` | Optional. Encrypts database connection passwords and API keys at rest (AES-256-GCM). Generate with `openssl rand -base64 32`. |
 | `MONGODB_URI` | MongoDB connection string (optional in Docker; embedded when omitted) |
 | `AGENT_API_BASE_URL` | OpenAI-compatible API endpoint (default: OpenRouter) |
@@ -241,32 +241,34 @@ Key environment variables (see `.env.example` for the full list):
 
 ## Contributing
 
-archmax uses [OpenSpec](https://github.com/nicholasgriffintn/openspec) for spec-driven development. **Every feature PR must include a corresponding spec change.**
+archmax semantics uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for spec-driven development. **Every feature PR must include a corresponding spec change.**
 
 ### Setup
 
 ```bash
-npm install -g openspec-cli
+npm install -g @fission-ai/openspec
 ```
 
 ### Workflow
 
-OpenSpec integrates with your AI coding assistant. Use these prompts in Cursor (or any OpenSpec-aware agent):
+OpenSpec installs skills and slash commands into your AI coding assistant (`openspec init`). Use these prompts in Claude Code, Cursor, or any OpenSpec-aware agent:
 
 | Prompt | What it does |
 |--------|-------------|
-| `/openspec-proposal` | Scaffolds a new change proposal with `proposal.md`, `tasks.md`, and spec deltas |
-| `/openspec-apply` | Implements an approved proposal by following the task checklist |
-| `/openspec-archive` | Archives a completed change and updates specs |
+| `/opsx:explore` | Thinks a change through before proposing it |
+| `/opsx:propose` | Scaffolds a new change proposal with `proposal.md`, `tasks.md`, and spec deltas |
+| `/opsx:apply` | Implements an approved proposal by following the task checklist |
+| `/opsx:sync` | Folds delta specs into the main specs without archiving |
+| `/opsx:archive` | Archives a completed change and updates specs |
 
 The typical flow:
 
-1. **Propose** — Run `/openspec-proposal` and describe the change. The agent creates the proposal directory, writes spec deltas, and validates with `openspec validate <change-id> --strict`.
+1. **Propose** — Run `/opsx:propose` and describe the change. The agent creates the proposal directory, writes spec deltas, and validates with `openspec validate <change-id> --strict`.
 2. **Review** — Get the proposal approved before any code is written.
-3. **Implement** — Run `/openspec-apply` to work through the task list.
-4. **Archive** — After merging, run `/openspec-archive` to move the change to the archive and update the canonical specs.
+3. **Implement** — Run `/opsx:apply` to work through the task list.
+4. **Archive** — After merging, run `/opsx:archive` to move the change to the archive and update the canonical specs.
 
-You can also drive the workflow manually with the CLI (`openspec list`, `openspec show`, `openspec validate`, `openspec archive`). See `openspec/AGENTS.md` for the full reference.
+You can also drive the workflow manually with the CLI (`openspec list`, `openspec show`, `openspec validate`, `openspec archive`). Project conventions fed to the agents live in the `context:` block of `openspec/config.yaml`.
 
 See the [Contributing guide](apps/docs/src/content/docs/contributing/openspec.mdx) for details.
 

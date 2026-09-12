@@ -9,7 +9,7 @@ describe("ValidatingFilesystemBackend", () => {
   let backend: ValidatingFilesystemBackend;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "archmax-test-"));
+    dir = await mkdtemp(join(tmpdir(), "semantics-test-"));
     backend = new ValidatingFilesystemBackend({ rootDir: dir });
   });
 
@@ -309,18 +309,17 @@ describe("ValidatingFilesystemBackend", () => {
       }
     });
 
-    it("lets exactly one parallel write to the same new path win", async () => {
+    it("serialises parallel writes to the same path so the last one wins intact", async () => {
+      // deepagents >= 1.13 writes with O_CREAT | O_TRUNC (create-or-overwrite);
+      // the mutex guarantees the two writes cannot interleave.
       const path = join(dir, "dup.yaml");
       const results = await Promise.all([
         backend.write(path, "name: first\n"),
         backend.write(path, "name: second\n"),
       ]);
 
-      const succeeded = results.filter((r) => !r.error);
-      const failed = results.filter((r) => r.error);
-      expect(succeeded).toHaveLength(1);
-      expect(failed).toHaveLength(1);
-      expect(failed[0].error).toMatch(/already exists/);
+      expect(results.every((r) => !r.error)).toBe(true);
+      expect(await readFile(path, "utf-8")).toBe("name: second\n");
     });
 
     it("does not let a failed mutation wedge later mutations", async () => {
