@@ -2,10 +2,10 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod/v4";
 import { connectDB } from "@archmax/core/infra/db";
-import { TestRun, TestCase, TestAgent } from "@archmax/core/models/index";
+import { TestRun, TestCase } from "@archmax/core/models/index";
 import { isRedisConfigured, publishTestRunCancelSignal } from "@archmax/core/infra/redis";
 import { enqueueTestRunJob, removeTestRunJobs } from "@archmax/core/queue/producer";
-import { processTestCase, markTestRunCancelled, isTestRunCancelled, clearTestRunCancelledFlag } from "@archmax/core/services/test-runner";
+import { processTestCase, markTestRunCancelled, isTestRunCancelled, clearTestRunCancelledFlag, finalizeTestRun } from "@archmax/core/services/test-runner";
 import { AppError } from "../utils/errors";
 
 const createSchema = z.object({
@@ -143,14 +143,7 @@ const app = new Hono()
         }
         clearTestRunCancelledFlag(runId);
         try {
-          const latest = await TestRun.findById(run._id).lean();
-          if (latest && latest.status !== "cancelled") {
-            const hasFailures = latest.cases.some((c: any) => c.status === "error" || c.status === "pending");
-            await TestRun.updateOne(
-              { _id: run._id },
-              { status: hasFailures ? "failed" : "completed", completedAt: new Date() },
-            );
-          }
+          await finalizeTestRun(runId);
         } catch (err) {
           console.error("[test-runs] Failed to finalize run:", err);
         }

@@ -1,5 +1,4 @@
 import { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, AlertTriangle, Loader2, WifiOff } from "lucide-react";
 import { cn, ScrollArea } from "@archmax/ui";
 import { toast } from "sonner";
@@ -20,6 +19,7 @@ import {
 } from "../../lib/chat-types";
 import { consumeSSEStream } from "../../lib/sse";
 import { api } from "@/lib/api";
+import { useAppConfig } from "@/lib/use-app-config";
 
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_BASE_DELAY_MS = 1000;
@@ -189,14 +189,7 @@ export function AgentChat({
   disableSend,
   initialInput,
 }: AgentChatProps) {
-  const { data: appConfig } = useQuery({
-    queryKey: ["app-config"],
-    queryFn: async () => {
-      const res = await fetch("/api/config");
-      return res.json() as Promise<{ githubEnabled: boolean; agentConfigured: boolean }>;
-    },
-    staleTime: Infinity,
-  });
+  const { data: appConfig } = useAppConfig();
   const agentConfigured = appConfig?.agentConfigured !== false;
 
   const [messages, setMessages] = useState<ChatMessage[]>(() =>

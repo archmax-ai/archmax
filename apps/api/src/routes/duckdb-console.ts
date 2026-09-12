@@ -1,4 +1,4 @@
-import { Hono, type Context } from "hono";
+import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod/v4";
 import { connectDB } from "@archmax/core/infra/db";
@@ -9,11 +9,7 @@ import {
   installDuckdbConsoleExtension,
 } from "@archmax/core/services/duckdb-console";
 import { AppError } from "../utils/errors";
-
-function safeJson(c: Context, data: unknown): Response {
-  const body = JSON.stringify(data, (_k, v) => (typeof v === "bigint" ? Number(v) : v));
-  return c.newResponse(body, 200, { "Content-Type": "application/json" });
-}
+import { safeJson } from "../utils/json";
 
 const sqlBodySchema = z.object({
   sql: z.string().min(1),

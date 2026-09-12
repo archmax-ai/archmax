@@ -74,8 +74,6 @@ function extensionTypeLabel(type: string): string | null {
       return "mssql";
     case "sqlite":
       return "sqlite";
-    case "firebird":
-      return "firebird";
     default:
       return null;
   }

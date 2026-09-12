@@ -167,11 +167,11 @@ function PlaygroundPage() {
   }, [selectedAgentId]);
 
   const cancelRequest: CancelRequestFn = useCallback(({ projectId, conversationId: convId }) => {
-    const baseUrl = import.meta.env.VITE_API_URL ?? "";
-    fetch(`${baseUrl}/api/projects/${projectId}/playground/cancel/${convId}`, {
-      method: "POST",
-      credentials: "include",
-    }).catch(() => {});
+    api.api.projects[":projectId"].playground.cancel[":conversationId"]
+      .$post({
+        param: { projectId, conversationId: convId },
+      })
+      .catch(() => {});
   }, []);
 
   const activeStreamId =

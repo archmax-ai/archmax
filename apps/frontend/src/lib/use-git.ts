@@ -144,7 +144,7 @@ export function useGitRevertToCommit() {
         toast.success("Reverted");
       }
       if (data.pushWarning) {
-        toast.warning(`Reverted locally, but push to remote failed: ${data.pushWarning}`);
+        toast.error(`Reverted locally, but push to remote failed: ${data.pushWarning}`);
       }
     },
     onError: (err) => toast.error(err.message),

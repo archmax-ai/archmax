@@ -1,17 +1,14 @@
-import { Hono, type Context } from "hono";
+import { Hono } from "hono";
 import { z } from "zod/v4";
 import { zValidator } from "@hono/zod-validator";
 import { connectDB } from "@archmax/core/infra/db";
 import { Connection, Project } from "@archmax/core/models/index";
 import { getProjectInstance, safeDisconnect, withQueryTimeout } from "@archmax/core/services/duckdb";
+import { SIMPLE_IDENTIFIER_RE } from "@archmax/core/services/sql-identifier";
 import { AppError } from "../utils/errors";
+import { safeJson } from "../utils/json";
 
 type ProjectInstance = Awaited<ReturnType<typeof getProjectInstance>>;
-
-function safeJson(c: Context, data: unknown): Response {
-  const body = JSON.stringify(data, (_k, v) => (typeof v === "bigint" ? Number(v) : v));
-  return c.newResponse(body, 200, { "Content-Type": "application/json" });
-}
 
 const MAX_PAGE_SIZE = 500;
 const DEFAULT_PAGE_SIZE = 50;
@@ -20,8 +17,6 @@ const paginationQuery = z.object({
   page: z.coerce.number().int().min(1).optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).optional().default(DEFAULT_PAGE_SIZE),
 });
-
-const IDENTIFIER_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
 const SYSTEM_SCHEMA_EXCLUSION = [
   "information_schema",
@@ -89,7 +84,7 @@ async function getValidDatabases(ctx: ProjectDuckDBContext): Promise<string[]> {
 }
 
 function assertValidIdentifier(value: string): void {
-  if (!IDENTIFIER_RE.test(value)) throw AppError.badRequest("Invalid identifier");
+  if (!SIMPLE_IDENTIFIER_RE.test(value)) throw AppError.badRequest("Invalid identifier");
 }
 
 const app = new Hono()
@@ -116,7 +111,7 @@ const app = new Hono()
     const schemaFilter = conn?.connectionConfig?.schema;
 
     let sql = `SELECT table_schema, table_name FROM information_schema.tables WHERE table_catalog = '${database}'`;
-    if (schemaFilter && IDENTIFIER_RE.test(schemaFilter)) {
+    if (schemaFilter && SIMPLE_IDENTIFIER_RE.test(schemaFilter)) {
       sql += ` AND table_schema = '${schemaFilter}'`;
     } else {
       sql += ` AND LOWER(table_schema) NOT IN (${SYSTEM_SCHEMA_EXCLUSION})`;

@@ -188,8 +188,15 @@ export class SemanticModelFileService {
   private async atomicWrite(targetPath: string, content: string): Promise<void> {
     const dir = join(targetPath, "..");
     const tmpPath = join(dir, `.${randomUUID()}.tmp`);
-    await writeFile(tmpPath, content, "utf-8");
-    await rename(tmpPath, targetPath);
+    try {
+      await writeFile(tmpPath, content, "utf-8");
+      await rename(tmpPath, targetPath);
+    } catch (err) {
+      // A failed write/rename (disk full, permission) otherwise leaves the
+      // dot-prefixed temp file behind — readers ignore it, but they accumulate.
+      await unlink(tmpPath).catch(() => {});
+      throw err;
+    }
   }
 
   async list(projectId: string): Promise<SemanticModel[]> {
@@ -202,32 +209,32 @@ export class SemanticModelFileService {
     }
 
     const yamlFiles = entries.filter((f) => f.endsWith(".yaml") && !f.startsWith("."));
-    const models: SemanticModel[] = [];
 
-    for (const file of yamlFiles) {
-      const name = file.replace(/\.yaml$/, "");
-      try {
-        const rawContent = await readFile(join(dir, file), "utf-8");
-        if (hasConflictMarkers(rawContent)) {
-          models.push({
-            name,
-            description: "",
-            datasets: [],
-            relationships: [],
-            metrics: [],
-            custom_extensions: [],
-            hasConflicts: true,
-          });
-          continue;
+    const loaded = await Promise.all(
+      yamlFiles.map(async (file): Promise<SemanticModel | null> => {
+        const name = file.replace(/\.yaml$/, "");
+        try {
+          const rawContent = await readFile(join(dir, file), "utf-8");
+          if (hasConflictMarkers(rawContent)) {
+            return {
+              name,
+              description: "",
+              datasets: [],
+              relationships: [],
+              metrics: [],
+              custom_extensions: [],
+              hasConflicts: true,
+            };
+          }
+          return await this.get(projectId, name);
+        } catch (err) {
+          console.warn(`[SemanticModelFileService] Skipping invalid model "${name}" in ${dir}:`, err instanceof Error ? err.message : err);
+          return null;
         }
-        const model = await this.get(projectId, name);
-        if (model) models.push(model);
-      } catch (err) {
-        console.warn(`[SemanticModelFileService] Skipping invalid model "${name}" in ${dir}:`, err instanceof Error ? err.message : err);
-      }
-    }
+      }),
+    );
 
-    return models;
+    return loaded.filter((m): m is SemanticModel => m !== null);
   }
 
   async get(projectId: string, name: string): Promise<SemanticModel | null> {
@@ -308,13 +315,15 @@ export class SemanticModelFileService {
 
     const currentNames = new Set(datasets.map((d) => d.name));
 
-    for (const dataset of datasets) {
-      const reconciled = reconcileDatasetForWrite(dataset);
-      await this.atomicWrite(
-        this.datasetPath(projectId, model.name, dataset.name),
-        dumpYaml({ dataset: stripEmptyExtensions(reconciled) }, YAML_OPTS),
-      );
-    }
+    await Promise.all(
+      datasets.map((dataset) => {
+        const reconciled = reconcileDatasetForWrite(dataset);
+        return this.atomicWrite(
+          this.datasetPath(projectId, model.name, dataset.name),
+          dumpYaml({ dataset: stripEmptyExtensions(reconciled) }, YAML_OPTS),
+        );
+      }),
+    );
 
     let existingFiles: string[];
     try {
@@ -322,12 +331,11 @@ export class SemanticModelFileService {
     } catch {
       existingFiles = [];
     }
-    for (const file of existingFiles) {
-      const dsName = file.replace(/\.yaml$/, "");
-      if (!currentNames.has(dsName)) {
-        await unlink(join(dsDir, file)).catch(() => {});
-      }
-    }
+    await Promise.all(
+      existingFiles
+        .filter((file) => !currentNames.has(file.replace(/\.yaml$/, "")))
+        .map((file) => unlink(join(dsDir, file)).catch(() => {})),
+    );
   }
 
   async delete(projectId: string, name: string): Promise<boolean> {
@@ -352,17 +360,19 @@ export class SemanticModelFileService {
       return [];
     }
 
-    const datasets: Dataset[] = [];
-    for (const file of entries) {
-      try {
-        const raw = await readFile(join(dsDir, file), "utf-8");
-        const parsed = loadYaml(raw);
-        datasets.push(decorateDataset(datasetFileSchema.parse(parsed).dataset));
-      } catch {
-        // skip invalid dataset files
-      }
-    }
-    return datasets;
+    const loaded = await Promise.all(
+      entries.map(async (file) => {
+        try {
+          const raw = await readFile(join(dsDir, file), "utf-8");
+          const parsed = loadYaml(raw);
+          return decorateDataset(datasetFileSchema.parse(parsed).dataset);
+        } catch {
+          // skip invalid dataset files
+          return null;
+        }
+      }),
+    );
+    return loaded.filter((d): d is Dataset => d !== null);
   }
 
   async getRawYaml(projectId: string, name: string): Promise<string | null> {

@@ -212,7 +212,7 @@ export async function processAgentJob(
           console.log(
             `[worker] Cancel signal received for conv ${conversationId} (running for ${Date.now() - startMs}ms)`,
           );
-          clearCancelFlag(conversationId);
+          void clearCancelFlag(conversationId).catch(() => {});
           abortController.abort(new Error("User cancelled"));
         });
       } catch (err) {
