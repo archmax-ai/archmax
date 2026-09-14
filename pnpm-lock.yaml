@@ -43,8 +43,8 @@ importers:
         specifier: ^1.5.11
         version: 1.5.11(@langchain/core@1.2.9(@opentelemetry/api@1.9.1)(openai@7.12.1(undici@8.10.2)(zod@4.5.4)))(undici@8.10.2)
       '@modelcontextprotocol/hono':
-        specifier: 2.0.0-alpha.2
-        version: 2.0.0-alpha.2(@modelcontextprotocol/server@2.0.0-beta.5)(hono@4.13.7)
+        specifier: 2.0.0
+        version: 2.0.0(@modelcontextprotocol/server@2.0.0-beta.5)(hono@4.13.7)
       '@modelcontextprotocol/server':
         specifier: 2.0.0-beta.5
         version: 2.0.0-beta.5
@@ -1232,11 +1232,11 @@ packages:
     resolution: {integrity: sha512-HKbY9XTbsDy1Y6r2I55TGE3JEapM0vg96e1MUmBIF9LGjos5gjhcIrTz1yvBPLg2aFKHjwhUAQfRdrCEnPxNew==}
     engines: {node: '>=20'}
 
-  '@modelcontextprotocol/hono@2.0.0-alpha.2':
-    resolution: {integrity: sha512-X6Rg5F6eXlLsahl9HYSNJ3/7/w7SxbkZUtDKp0FBjS3p4Tydr0rKh3iorRPVC5f/Z5UfV83ARFxfRlnOgMZuDA==}
+  '@modelcontextprotocol/hono@2.0.0':
+    resolution: {integrity: sha512-lKCSXRusLxpX63G+6og9ewcRkqVbjB2xSxpvU/VJhxcUkpvGgpDrmcgNRQ4dTapGr8AspNFdRBdmJc500Vhl/A==}
     engines: {node: '>=20'}
     peerDependencies:
-      '@modelcontextprotocol/server': ^2.0.0-alpha.2
+      '@modelcontextprotocol/server': ^2.0.0
       hono: ^4.11.4
 
   '@modelcontextprotocol/server@2.0.0-beta.5':
@@ -6318,7 +6318,7 @@ snapshots:
     dependencies:
       zod: 4.5.4
 
-  '@modelcontextprotocol/hono@2.0.0-alpha.2(@modelcontextprotocol/server@2.0.0-beta.5)(hono@4.13.7)':
+  '@modelcontextprotocol/hono@2.0.0(@modelcontextprotocol/server@2.0.0-beta.5)(hono@4.13.7)':
     dependencies:
       '@modelcontextprotocol/server': 2.0.0-beta.5
       hono: 4.13.7

@@ -22,7 +22,7 @@
     "@hono/zod-validator": "^0.9.1",
     "@langchain/core": "^1.2.9",
     "@langchain/openai": "^1.5.11",
-    "@modelcontextprotocol/hono": "2.0.0-alpha.2",
+    "@modelcontextprotocol/hono": "2.0.0",
     "@modelcontextprotocol/server": "2.0.0-beta.5",
     "better-auth": "^1.7.3",
     "deepagents": "^1.13.3",
