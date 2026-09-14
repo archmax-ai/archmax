@@ -15,7 +15,7 @@
     "@langchain/core": "^1.2.9",
     "bullmq": "^5.80.9",
     "dotenv": "^17.4.2",
-    "ioredis": "^5",
+    "ioredis": "^6",
     "mongoose": "^9"
   },
   "devDependencies": {

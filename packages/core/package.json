@@ -19,7 +19,7 @@
     "bullmq": "^5.80.9",
     "deepagents": "^1.13.3",
     "dotenv": "^17.4.2",
-    "ioredis": "^5",
+    "ioredis": "^6",
     "isomorphic-git": "^1.41.9",
     "js-yaml": "^5.2.2",
     "langchain": "^1.5.10",
