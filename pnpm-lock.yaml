@@ -208,8 +208,8 @@ importers:
         specifier: ^17.4.2
         version: 17.4.2
       ioredis:
-        specifier: ^5
-        version: 5.11.1
+        specifier: ^6
+        version: 6.0.0
       mongoose:
         specifier: ^9
         version: 9.9.5
@@ -251,8 +251,8 @@ importers:
         specifier: ^17.4.2
         version: 17.4.2
       ioredis:
-        specifier: ^5
-        version: 5.11.1
+        specifier: ^6
+        version: 6.0.0
       isomorphic-git:
         specifier: ^1.41.9
         version: 1.41.9
@@ -1158,6 +1158,9 @@ packages:
 
   '@ioredis/commands@1.10.0':
     resolution: {integrity: sha512-UmeW7z4LfctwoQ5wkhVzgq8tXkreED2xZGpX+Bg+zA+WJFZCT6c062AfCK/Dfk81xZnnwdhJCUMkitihRaoC2Q==}
+
+  '@ioredis/commands@2.0.0':
+    resolution: {integrity: sha512-vrx0AE/T0h7cRZwfo1M39Cr+ZhZrkf0V8mQN75wucKCxCLD9l/VX6no3gFvrLqD1IlG/1LtzWovqEw3t0Vr9zg==}
 
   '@joplin/turndown-plugin-gfm@1.0.64':
     resolution: {integrity: sha512-8GJ7f9OenE3zkSVII5B6qzIkvgF7C/a20gaASEjM6jWPLPJFFQ2nQ3Ou/kXH1mPUTs9dC9VYs8QXVPvZabKXBQ==}
@@ -3794,6 +3797,10 @@ packages:
     resolution: {integrity: sha512-ehuGcf94bQXhfagULNXrJdfnWO38v070jxSx/qE87Kjzmu2fU7ro5EFAb+OPituLqgfyuQaym5DlrNydW2sJ9A==}
     engines: {node: '>=12.22.0'}
 
+  ioredis@6.0.0:
+    resolution: {integrity: sha512-f+Dtubxfpf6KYFq7WVXJoOLn0bk4TJrMrN9SzeE+jrWrCWj7XX3fA6vkryafhADX+GMymRxgDJDOI33COkJc0w==}
+    engines: {node: '>=20.0.0'}
+
   iron-webcrypto@1.2.1:
     resolution: {integrity: sha512-feOM6FaSr6rEABp/eDfVseKyTMDt+KGpeB35SkVn9Tyn0CqvVsY3EwI0v5i8nMHyJnzCIQf7nsy3p41TPkJZhg==}
 
@@ -6224,6 +6231,8 @@ snapshots:
     optional: true
 
   '@ioredis/commands@1.10.0': {}
+
+  '@ioredis/commands@2.0.0': {}
 
   '@joplin/turndown-plugin-gfm@1.0.64': {}
 
@@ -8812,6 +8821,17 @@ snapshots:
       denque: 2.1.0
       redis-errors: 1.2.0
       redis-parser: 3.0.0
+      standard-as-callback: 2.1.0
+    transitivePeerDependencies:
+      - supports-color
+
+  ioredis@6.0.0:
+    dependencies:
+      '@ioredis/commands': 2.0.0
+      cluster-key-slot: 1.1.1
+      debug: 4.4.3
+      denque: 2.1.0
+      redis-errors: 1.2.0
       standard-as-callback: 2.1.0
     transitivePeerDependencies:
       - supports-color
