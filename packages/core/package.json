@@ -13,19 +13,19 @@
   },
   "dependencies": {
     "@duckdb/node-api": "1.5.3-r.3",
-    "@langchain/anthropic": "^1.5.9",
-    "@langchain/core": "^1.2.9",
-    "@langchain/openai": "^1.5.11",
+    "@langchain/anthropic": "^1.5.10",
+    "@langchain/core": "^1.2.10",
+    "@langchain/openai": "^1.5.12",
     "bullmq": "^5.80.9",
-    "deepagents": "^1.13.3",
+    "deepagents": "^1.13.4",
     "dotenv": "^17.4.2",
     "ioredis": "^5",
-    "isomorphic-git": "^1.41.9",
+    "isomorphic-git": "^1.42.0",
     "js-yaml": "^5.2.2",
-    "langchain": "^1.5.10",
+    "langchain": "^1.5.11",
     "markitdown-ts": "^0.0.10",
-    "mongoose": "^9.9.5",
-    "zod": "^4.5.4"
+    "mongoose": "^9.10.0",
+    "zod": "^4.6.2"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
