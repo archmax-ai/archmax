@@ -15,6 +15,6 @@
     "starlight-image-zoom": "^0.16.0"
   },
   "devDependencies": {
-    "js-yaml": "^4.3.2"
+    "js-yaml": "^5.4.1"
   }
 }
